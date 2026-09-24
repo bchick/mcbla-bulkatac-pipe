@@ -7,7 +7,7 @@ jobs: 100
 software-deployment-method: conda
 conda-frontend: conda
 # Shared, reusable env cache (edit to a shared lab path to avoid re-solving per project)
-conda-prefix: .snakemake/conda
+# conda-prefix: set by SNAKEMAKE_CONDA_PREFIX (pixi.toml); default <workdir>/.snakemake/conda
 printshellcmds: true
 rerun-incomplete: true
 keep-going: true

@@ -3,7 +3,7 @@
 cores: 32
 software-deployment-method: conda
 conda-frontend: conda
-conda-prefix: .snakemake/conda
+# conda-prefix: set by SNAKEMAKE_CONDA_PREFIX (pixi.toml); default <workdir>/.snakemake/conda
 printshellcmds: true
 rerun-incomplete: true
 keep-going: true

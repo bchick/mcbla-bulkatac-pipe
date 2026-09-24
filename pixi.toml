@@ -30,6 +30,12 @@ conda = ">=24.7.1"
 snakefmt = "*"
 pandas = "*"
 
+# One conda env store for every `pixi run snakemake` (test and real runs,
+# any --directory): <repo>/.snakemake/conda (gitignored). Override by
+# exporting SNAKEMAKE_CONDA_PREFIX or passing --conda-prefix.
+[activation.env]
+SNAKEMAKE_CONDA_PREFIX = "${SNAKEMAKE_CONDA_PREFIX:-$PIXI_PROJECT_ROOT/.snakemake/conda}"
+
 [tasks]
 # Test dataset (synthetic, ~40 MB, gitignored). --fasta <hg38.fa> avoids the UCSC download.
 build-test = "bash .test/scripts/build_test_data.sh"

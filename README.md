@@ -42,7 +42,9 @@ The repo's `pixi.toml` provides Snakemake (>= 8.20, tested on 9.27), the Slurm
 and generic-cluster executor plugins, and conda. Bioinformatics tools are
 pinned per stage in `workflow/envs/*.yaml` and are built by Snakemake
 (`--sdm conda`). They are split by stage because the pinned versions do not
-co-solve in one environment.
+co-solve in one environment. Under `pixi run` they are stored once in
+`.snakemake/conda/` at the repo root, shared by test and real runs (about
+15 GB). Export `SNAKEMAKE_CONDA_PREFIX` to put them somewhere else.
 
 ```bash
 git clone https://github.com/bchick/mcbla-bulkatac-pipe.git && cd mcbla-bulkatac-pipe
