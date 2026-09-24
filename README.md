@@ -10,21 +10,10 @@ stimulated with EGF or HRG, sampled from 0 to 240 min), generalised to any
 design. Every default comes from that analysis and has the benchmark evidence
 behind it written down in [`docs/defaults_rationale.md`](docs/defaults_rationale.md).
 
-```
-FASTQ ──► cutadapt ─► bowtie2 ─► filter (MAPQ30, proper pairs, chrM, blacklist) ─► markdup -r
-                                                                                     │
-nf-core/atacseq outdir (*.mLb.clN.sorted.bam) ───────────────────────────────────────┤
-                                                                                     ▼
-          deepTools QC + MultiQC ◄── final BAMs ──► MACS2 (per rep, merged relaxed, merged stringent)
-                                                          │
-                                                          ▼
-                                           IDR (any number of reps) ─► consensus peaks
-                                                          │
-        ┌──────────────────────┬──────────────────────────┼─────────────────────┬─────────────────────┐
-        ▼                      ▼                          ▼                     ▼                     ▼
- DiffBind contrasts   normalization check      DESeq2 LRT + degPatterns     chromVAR          TOBIAS footprints
- (DESeq2)             (csaw bins, quantile)    per treatment series         (JASPAR2020)      (ATACorrect → BINDetect)
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/subway_map_dark.svg">
+  <img alt="mcbla-bulkatac-pipe subway map: FASTQ or nf-core/atacseq BAMs, through alignment, MACS2, IDR and consensus peaks, into DiffBind contrasts, normalization check, time-course clustering, chromVAR and TOBIAS footprinting, with a deepTools/MultiQC QC branch" src="docs/images/subway_map_light.svg">
+</picture>
 
 ## Why this pipeline, compared with nf-core/atacseq
 
