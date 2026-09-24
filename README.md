@@ -45,7 +45,7 @@ pinned per stage in `workflow/envs/*.yaml` and are built by Snakemake
 co-solve in one environment.
 
 ```bash
-git clone <this repo> mcbla-bulkatac-pipe && cd mcbla-bulkatac-pipe
+git clone https://github.com/bchick/mcbla-bulkatac-pipe.git && cd mcbla-bulkatac-pipe
 pixi install
 pixi run build-test     # synthetic test data (downloads chr22 + chrM from UCSC)
 pixi run test           # align -> peaks -> IDR on the test data
