@@ -1,5 +1,5 @@
 # TF activity: port of 05_atac_temporal_clustering/07_chromvar.Rmd.
-#   consensus-peak counts (min fragments filter) -> addGCBias
+#   counts over chromvar.peaks (min fragments filter) -> addGCBias
 #   -> JASPAR2020 CORE vertebrate PWMs matched on 200 bp peak-centred windows
 #      (motifmatchr) -> getBackgroundPeaks(niterations = 200, w = 0.1)
 #   -> computeDeviations -> deviation Z-scores + variability.
@@ -8,11 +8,11 @@
 
 CV = config["chromvar"]
 
-if MODULES.get("chromvar", True):
+if RUN_CHROMVAR:
 
     rule chromvar:
         input:
-            counts="results/counts/consensus_counts.tsv",
+            counts=counts_matrix(CV_PEAKS),
             fasta="results/reference/genome.fa",
             fai="results/reference/genome.fa.fai",
         output:

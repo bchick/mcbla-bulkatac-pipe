@@ -96,7 +96,8 @@ else:
     CONTRASTS = []
 
 # Conditions excluded from count-based statistics (diff, normcheck,
-# timecourse, chromvar). Peaks, QC and footprinting still use every condition.
+# timecourse, chromvar). Peaks and QC still use every condition; footprinting
+# uses footprint.conditions.
 EXCLUDED = set(config.get("exclude_conditions") or [])
 STAT_LIBS = [l for l in LIBS if LIBRARIES.loc[l, "condition"] not in EXCLUDED]
 if CONTRASTS:
@@ -323,19 +324,102 @@ def consensus_inputs(wildcards):
 
 
 # ---------------------------------------------------------------------------
-# Downstream peak-set selection
+# Analyses (opt-in). Processing always runs; each analysis runs only when its
+# section has `run: true`, and must then name the peak set it uses.
 # ---------------------------------------------------------------------------
-def consensus_bed():
-    """Peak set used for counting (timecourse, chromVAR, optional DiffBind)."""
-    if MODULES.get("idr", True) and config["consensus"]["source"] == "idr":
-        return "results/peaks/consensus/consensus_idr.bed"
-    return "results/peaks/consensus/union_stringent.bed"
+# Peak sets the processing stage produces, by the name used in the config.
+PIPELINE_PEAKSETS = {
+    "idr_consensus": "results/peaks/consensus/consensus_idr.bed",
+    "stringent_union": "results/peaks/consensus/union_stringent.bed",
+}
+# DiffBind only: its own consensus of per-replicate relaxed peaks (minOverlap).
+DIFFBIND_INDIVIDUAL = "individual"
 
 
-def footprint_peaks():
-    if config["footprint"]["peaks"] == "consensus":
-        return consensus_bed()
-    return "results/peaks/consensus/union_stringent.bed"
+def _analysis_on(section):
+    return bool(config[section].get("run", False))
+
+
+def resolve_peaks(section, allow_individual=False):
+    """(label, bed) for `<section>.peaks`; bed is None for `individual`.
+
+    Accepts a pipeline peak set name or a path to a BED file (first three
+    columns used), e.g. one curated from an earlier run.
+    """
+    value = str(config[section].get("peaks") or "").strip()
+    choices = list(PIPELINE_PEAKSETS)
+    if allow_individual:
+        choices = [DIFFBIND_INDIVIDUAL] + choices
+    hint = f"one of {', '.join(choices)}, or a path to a BED file"
+    if not value:
+        raise ValueError(
+            f"{section}.run is true, so {section}.peaks must be set ({hint})."
+        )
+    if value == DIFFBIND_INDIVIDUAL:
+        if not allow_individual:
+            raise ValueError(
+                f"{section}.peaks: '{DIFFBIND_INDIVIDUAL}' is only valid for diff ({hint})."
+            )
+        return value, None
+    if value in PIPELINE_PEAKSETS:
+        if value == "idr_consensus" and not MODULES.get("idr", True):
+            raise ValueError(
+                f"{section}.peaks is idr_consensus, but modules.idr is false."
+            )
+        return value, PIPELINE_PEAKSETS[value]
+    if not os.path.isfile(value):
+        raise ValueError(
+            f"{section}.peaks: '{value}' is neither a pipeline peak set nor an "
+            f"existing file ({hint})."
+        )
+    stem = re.sub(r"[^A-Za-z0-9]+", "_", Path(value).name.split(".")[0]).strip("_")
+    return f"custom_{stem}", value
+
+
+RUN_DIFF = _analysis_on("diff")
+RUN_NORMCHECK = _analysis_on("normcheck")
+RUN_TIMECOURSE = _analysis_on("timecourse")
+RUN_CHROMVAR = _analysis_on("chromvar")
+RUN_FOOTPRINT = _analysis_on("footprint")
+
+if (RUN_DIFF or RUN_NORMCHECK) and not CONTRASTS:
+    raise ValueError(
+        "diff/normcheck are on, but no contrasts are defined (config key `contrasts`)."
+    )
+if RUN_NORMCHECK and not RUN_DIFF:
+    raise ValueError(
+        "normcheck.run needs diff.run: it re-runs the diff contrasts on the same "
+        "counted DiffBind object and peak set."
+    )
+
+TC = config["timecourse"]
+HAS_TIME = bool((LIBRARIES["time"] != "").all()) and bool(
+    (LIBRARIES["treatment"] != "").all()
+)
+if RUN_TIMECOURSE and not HAS_TIME:
+    raise ValueError(
+        "timecourse.run is true, but the samplesheet lacks complete "
+        "'treatment' and 'time' columns."
+    )
+
+DIFF_PEAKS = resolve_peaks("diff", allow_individual=True) if RUN_DIFF else None
+TC_PEAKS = resolve_peaks("timecourse") if RUN_TIMECOURSE else None
+CV_PEAKS = resolve_peaks("chromvar") if RUN_CHROMVAR else None
+FP_PEAKS = resolve_peaks("footprint") if RUN_FOOTPRINT else None
+
+# Peak sets that need a featureCounts matrix: {label: bed}
+COUNTSETS = dict(p for p in (TC_PEAKS, CV_PEAKS) if p)
+
+
+def counts_matrix(peaks):
+    return f"results/counts/{peaks[0]}/peak_counts.tsv"
+
+
+FP_CONDITIONS = list(config["footprint"].get("conditions") or CONDITIONS)
+if RUN_FOOTPRINT:
+    _unknown = set(FP_CONDITIONS) - set(CONDITIONS)
+    if _unknown:
+        raise ValueError(f"footprint.conditions: unknown conditions {sorted(_unknown)}")
 
 
 def peakset_members(wildcards):
@@ -353,18 +437,6 @@ def peak_stats_bam(wildcards):
 # ---------------------------------------------------------------------------
 # Time-course series
 # ---------------------------------------------------------------------------
-TC = config["timecourse"]
-HAS_TIME = bool((LIBRARIES["time"] != "").all()) and bool(
-    (LIBRARIES["treatment"] != "").all()
-)
-RUN_TIMECOURSE = bool(MODULES.get("timecourse", False)) and HAS_TIME
-if MODULES.get("timecourse", False) and not HAS_TIME:
-    _warn(
-        "modules.timecourse is on, but the samplesheet lacks complete "
-        "'treatment' and 'time' columns; the time-course module is skipped."
-    )
-
-
 def timecourse_series():
     if not RUN_TIMECOURSE:
         return []
@@ -438,7 +510,8 @@ def core_targets():
     return t
 
 
-def all_targets():
+def processing_targets():
+    """Default target: processed data (BAMs, peaks, IDR, consensus sets, QC)."""
     t = core_targets()
     if MODULES.get("qc", True):
         t += expand("results/bigwig/{l}.bw", l=LIBS)
@@ -451,12 +524,18 @@ def all_targets():
         ]
     if MODULES.get("multiqc", True):
         t.append("results/qc/multiqc/multiqc_report.html")
-    if MODULES.get("diff", True) and CONTRASTS:
+    return t
+
+
+def analysis_targets():
+    """Outputs of the analyses switched on with `<section>.run: true`."""
+    t = []
+    if RUN_DIFF:
         t += [
             "results/diff/depth/dba_analyzed.rds",
             "results/diff/depth/summary.tsv",
         ]
-    if MODULES.get("normcheck", True) and CONTRASTS:
+    if RUN_NORMCHECK:
         t += [
             "results/normcheck/norm_comparison.tsv",
             "results/normcheck/norm_comparison_barplot.pdf",
@@ -466,15 +545,20 @@ def all_targets():
             f"results/timecourse/{s}/lrt_results.tsv",
             f"results/timecourse/{s}/degpatterns_clusters.tsv",
         ]
-    if MODULES.get("chromvar", True):
+    if RUN_CHROMVAR:
         t += [
             "results/chromvar/deviation_zscores.tsv",
             "results/chromvar/variability.tsv",
         ]
-    if MODULES.get("footprint", True):
+    if RUN_FOOTPRINT:
         t.append("results/footprint/bindetect/bindetect_results.txt")
     return t
 
 
+def all_targets():
+    return processing_targets() + analysis_targets()
+
+
 wildcard_constraints:
     series=_alt(timecourse_series()),
+    countset=_alt(list(COUNTSETS)),

@@ -2,12 +2,12 @@
 <title>mcbla-bulkatac-pipe subway map</title>
 <rect x="40" y="20" width="572" height="560" rx="14" fill="#161B22"/>
 <circle cx="62" cy="44" r="13" fill="#E6EDF3"/><text x="62" y="49" font-size="14" font-weight="700" fill="#161B22" text-anchor="middle">1</text><text x="82" y="49" font-size="15" font-weight="700" fill="#E6EDF3">Preprocessing</text>
-<rect x="620" y="20" width="492" height="560" rx="14" fill="#161B22"/>
-<circle cx="642" cy="44" r="13" fill="#E6EDF3"/><text x="642" y="49" font-size="14" font-weight="700" fill="#161B22" text-anchor="middle">2</text><text x="662" y="49" font-size="15" font-weight="700" fill="#E6EDF3">Peaks &amp; counts</text>
-<rect x="1120" y="20" width="372" height="560" rx="14" fill="#161B22"/>
-<circle cx="1142" cy="44" r="13" fill="#E6EDF3"/><text x="1142" y="49" font-size="14" font-weight="700" fill="#161B22" text-anchor="middle">3</text><text x="1162" y="49" font-size="15" font-weight="700" fill="#E6EDF3">Downstream analysis</text>
-<polyline points="590,310 650,370 650,450 710,510 1120,510" fill="none" stroke="#F2B138" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
-<polyline points="790,310 890,410 1270,410" fill="none" stroke="#D83B3B" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="620" y="20" width="424" height="560" rx="14" fill="#161B22"/>
+<circle cx="642" cy="44" r="13" fill="#E6EDF3"/><text x="642" y="49" font-size="14" font-weight="700" fill="#161B22" text-anchor="middle">2</text><text x="662" y="49" font-size="15" font-weight="700" fill="#E6EDF3">Peaks &amp; QC</text>
+<rect x="1052" y="20" width="440" height="560" rx="14" fill="#161B22"/>
+<circle cx="1074" cy="44" r="13" fill="#E6EDF3"/><text x="1074" y="49" font-size="14" font-weight="700" fill="#161B22" text-anchor="middle">3</text><text x="1094" y="49" font-size="15" font-weight="700" fill="#E6EDF3">Analyses (opt-in)</text>
+<polyline points="590,310 650,370 650,450 710,510 1025,510" fill="none" stroke="#F2B138" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="1000,310 1100,410 1370,410" fill="none" stroke="#D83B3B" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
 <polyline points="1090,310 1150,250 1210,190 1300,100 1460,100" fill="none" stroke="#E8702A" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
 <polyline points="1090,310 1150,250 1210,190 1460,190" fill="none" stroke="#8E44AD" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
 <polyline points="1090,310 1150,250 1270,250" fill="none" stroke="#16A2B8" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
@@ -44,35 +44,35 @@
 <text x="900" y="288" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">ENCODE 0.05</text>
 <circle cx="1000" cy="310" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
 <text x="1000" y="273" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Consensus</text>
-<text x="1000" y="288" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">peaks</text>
+<text x="1000" y="288" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">peak sets</text>
 <rect x="1077" y="297" width="26" height="26" rx="13" fill="#FFFFFF" stroke="#1F2328" stroke-width="3.5"/>
-<text x="1090" y="342" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">featureCounts</text>
-<text x="1090" y="357" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">DiffBind count</text>
-<circle cx="720" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
-<text x="720" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">deepTools</text>
-<text x="720" y="557" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">bigWig</text>
-<circle cx="820" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
-<text x="820" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">TSS</text>
-<text x="820" y="557" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">enrichment</text>
-<circle cx="920" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
-<text x="920" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Fingerprint</text>
-<circle cx="1020" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
-<text x="1020" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Correlation</text>
-<text x="1020" y="557" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">+ PCA</text>
-<rect x="1110" y="498" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1115" y1="506" x2="1125" y2="506" stroke="#1F2328" stroke-width="2"/><line x1="1115" y1="512" x2="1125" y2="512" stroke="#1F2328" stroke-width="2"/>
-<text x="1120" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">MultiQC</text>
-<circle cx="990" cy="410" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
-<text x="990" y="442" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">ATACorrect</text>
-<circle cx="1130" cy="410" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
-<text x="1130" y="442" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">ScoreBigwig</text>
-<rect x="1260" y="398" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1265" y1="406" x2="1275" y2="406" stroke="#1F2328" stroke-width="2"/><line x1="1265" y1="412" x2="1275" y2="412" stroke="#1F2328" stroke-width="2"/>
-<text x="1270" y="442" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">BINDetect</text>
+<text x="1090" y="342" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Counts over</text>
+<text x="1090" y="357" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">chosen peaks</text>
+<circle cx="710" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
+<text x="710" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">deepTools</text>
+<text x="710" y="557" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">bigWig</text>
+<circle cx="790" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
+<text x="790" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">TSS</text>
+<text x="790" y="557" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">enrichment</text>
+<circle cx="870" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
+<text x="870" y="542" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Fingerprint</text>
+<circle cx="950" cy="510" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
+<text x="950" y="473" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Correlation</text>
+<text x="950" y="488" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">+ PCA</text>
+<rect x="1015" y="498" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1020" y1="506" x2="1030" y2="506" stroke="#1F2328" stroke-width="2"/><line x1="1020" y1="512" x2="1030" y2="512" stroke="#1F2328" stroke-width="2"/>
+<text x="1025" y="488" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">MultiQC</text>
+<circle cx="1150" cy="410" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
+<text x="1150" y="442" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">ATACorrect</text>
+<circle cx="1260" cy="410" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
+<text x="1260" y="442" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">ScoreBigwig</text>
+<rect x="1360" y="398" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1365" y1="406" x2="1375" y2="406" stroke="#1F2328" stroke-width="2"/><line x1="1365" y1="412" x2="1375" y2="412" stroke="#1F2328" stroke-width="2"/>
+<text x="1370" y="442" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">BINDetect</text>
 <circle cx="1270" cy="310" r="9" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/>
 <text x="1270" y="342" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">DiffBind +</text>
 <text x="1270" y="357" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">DESeq2 contrasts</text>
 <rect x="1440" y="298" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1445" y1="306" x2="1455" y2="306" stroke="#1F2328" stroke-width="2"/><line x1="1445" y1="312" x2="1455" y2="312" stroke="#1F2328" stroke-width="2"/>
-<text x="1450" y="342" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Tables,</text>
-<text x="1450" y="357" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">MA plots</text>
+<text x="1450" y="342" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">Tables</text>
+<text x="1450" y="357" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">+ MA plots</text>
 <rect x="1260" y="238" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1265" y1="246" x2="1275" y2="246" stroke="#1F2328" stroke-width="2"/><line x1="1265" y1="252" x2="1275" y2="252" stroke="#1F2328" stroke-width="2"/>
 <text x="1288" y="248" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="start">chromVAR</text>
 <text x="1288" y="262" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="start">(JASPAR2020)</text>
@@ -88,7 +88,7 @@
 <rect x="1450" y="88" width="20" height="24" rx="3" fill="#FFFFFF" stroke="#1F2328" stroke-width="3"/><line x1="1455" y1="96" x2="1465" y2="96" stroke="#1F2328" stroke-width="2"/><line x1="1455" y1="102" x2="1465" y2="102" stroke="#1F2328" stroke-width="2"/>
 <text x="1460" y="63" font-size="13" font-weight="700" fill="#E6EDF3" text-anchor="middle">degPatterns</text>
 <text x="1460" y="78" font-size="11.5" font-weight="400" fill="#9198A1" text-anchor="middle">clusters</text>
-<line x1="40" y1="602" x2="76" y2="602" stroke="#24B064" stroke-width="8" stroke-linecap="round"/><text x="90" y="607" font-size="13" fill="#E6EDF3">Core: FASTQ to consensus peaks</text>
+<line x1="40" y1="602" x2="76" y2="602" stroke="#24B064" stroke-width="8" stroke-linecap="round"/><text x="90" y="607" font-size="13" fill="#E6EDF3">Processing: FASTQ to consensus peak sets</text>
 <line x1="390" y1="602" x2="426" y2="602" stroke="#8C8C8C" stroke-width="8" stroke-dasharray="10 5" stroke-linecap="butt"/><text x="440" y="607" font-size="13" fill="#E6EDF3">nf-core/atacseq BAM input</text>
 <line x1="740" y1="602" x2="776" y2="602" stroke="#F2B138" stroke-width="8" stroke-linecap="round"/><text x="790" y="607" font-size="13" fill="#E6EDF3">QC</text>
 <line x1="1090" y1="602" x2="1126" y2="602" stroke="#1F6FEB" stroke-width="8" stroke-linecap="round"/><text x="1140" y="607" font-size="13" fill="#E6EDF3">Differential accessibility</text>

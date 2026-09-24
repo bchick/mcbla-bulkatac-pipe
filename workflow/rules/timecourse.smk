@@ -1,10 +1,10 @@
 # Temporal programs: port of 05_atac_temporal_clustering (00_preprocessing +
-# 01_degpatterns_clustering). Runs only when modules.timecourse is on AND the
-# samplesheet has complete `treatment` and `time` columns.
+# 01_degpatterns_clustering). Runs only when timecourse.run is true (needs
+# complete `treatment` and `time` columns and timecourse.peaks).
 #
 # Per treatment series (baseline_treatments, e.g. unstimulated time 0, are
 # shared by every series):
-#   consensus-peak counts -> keep rowMeans >= 10 -> VST (blind) on all samples
+#   counts over timecourse.peaks -> keep rowMeans >= 10 -> VST (blind) on all samples
 #   -> DESeq2 LRT (~time vs ~1) on the series -> padj < 0.01
 #   -> range of per-time VST means >= 0.5 -> DEGreport::degPatterns
 #      (minc 50, cutoff 0.5, set.seed(42))
@@ -13,7 +13,7 @@ if RUN_TIMECOURSE:
 
     rule timecourse_series:
         input:
-            counts="results/counts/consensus_counts.tsv",
+            counts=counts_matrix(TC_PEAKS),
         output:
             lrt="results/timecourse/{series}/lrt_results.tsv",
             clusters="results/timecourse/{series}/degpatterns_clusters.tsv",

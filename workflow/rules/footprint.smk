@@ -1,12 +1,13 @@
 # TF footprinting: port of 10_tf_footprinting/scripts/01-03.
-#   TOBIAS ATACorrect per condition on the merged BAM over the union peaks
-#   -> TOBIAS ScoreBigwig -> one TOBIAS BINDetect across all conditions.
+#   TOBIAS ATACorrect per condition on the merged BAM over footprint.peaks
+#   -> TOBIAS ScoreBigwig -> one TOBIAS BINDetect across footprint.conditions
+#   (empty = every condition).
 # Motifs: footprint.motifs (JASPAR format). If empty, JASPAR2020 CORE
 # vertebrates (the chromVAR motif set) is exported with TFBSTools.
 
 FP = config["footprint"]
 
-if MODULES.get("footprint", True):
+if RUN_FOOTPRINT:
 
     if not FP.get("motifs"):
 
@@ -29,7 +30,7 @@ if MODULES.get("footprint", True):
             bai="results/bam/merged/{condition}.merged.bam.bai",
             fasta="results/reference/genome.fa",
             fai="results/reference/genome.fa.fai",
-            peaks=footprint_peaks(),
+            peaks=FP_PEAKS[1],
             blacklist=blacklist_input(),
         output:
             corrected="results/footprint/atacorrect/{condition}_corrected.bw",
@@ -61,7 +62,7 @@ if MODULES.get("footprint", True):
     rule tobias_scorebigwig:
         input:
             signal="results/footprint/atacorrect/{condition}_corrected.bw",
-            peaks=footprint_peaks(),
+            peaks=FP_PEAKS[1],
         output:
             "results/footprint/footprintscores/{condition}_footprints.bw",
         log:
@@ -83,12 +84,12 @@ if MODULES.get("footprint", True):
     rule tobias_bindetect:
         input:
             signals=expand(
-                "results/footprint/footprintscores/{c}_footprints.bw", c=CONDITIONS
+                "results/footprint/footprintscores/{c}_footprints.bw", c=FP_CONDITIONS
             ),
             motifs=tobias_motifs(),
             fasta="results/reference/genome.fa",
             fai="results/reference/genome.fa.fai",
-            peaks=footprint_peaks(),
+            peaks=FP_PEAKS[1],
         output:
             "results/footprint/bindetect/bindetect_results.txt",
         log:
@@ -101,7 +102,7 @@ if MODULES.get("footprint", True):
             runtime=1440,
         params:
             outdir=lambda wildcards, output: os.path.dirname(output[0]),
-            conditions=CONDITIONS,
+            conditions=FP_CONDITIONS,
             extra=FP.get("bindetect_extra", ""),
         shell:
             """

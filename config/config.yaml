@@ -67,22 +67,18 @@ reference:
   mito_chrom: chrM
 
 # Conditions left out of count-based statistics (diff, normcheck, timecourse,
-# chromvar). Peaks, IDR, QC and footprinting still use every condition.
+# chromvar). Peaks, IDR and QC still use every condition; footprinting uses
+# footprint.conditions.
 # AS28 excludes the 15 min libraries (a technical batch), see salk_example.yaml.
 exclude_conditions: []
 
 # -----------------------------------------------------------------------------
-# Modules (true/false)
+# Processing modules (true/false)
 # -----------------------------------------------------------------------------
 modules:
   qc: true          # deepTools bigWigs, TSS profile, fragment sizes, correlation, PCA, fingerprint
   multiqc: true     # MultiQC report
   idr: true         # IDR per condition + IDR consensus peak set
-  diff: true        # DiffBind (DESeq2) contrasts from contrasts.tsv
-  normcheck: true   # re-run contrasts under csaw / quantile; flag sensitive contrasts
-  timecourse: true  # DESeq2 LRT + degPatterns per treatment series (needs treatment + time)
-  chromvar: true    # chromVAR TF deviations (JASPAR2020)
-  footprint: true   # TOBIAS ATACorrect -> ScoreBigwig -> BINDetect
 
 # -----------------------------------------------------------------------------
 # Trimming (cutadapt)
@@ -136,23 +132,34 @@ idr:
   # source script) instead of stopping the run.
   allow_failure: true
 
-consensus:
-  # Peak set counted for timecourse + chromVAR: idr (IDR consensus) | stringent
-  # (union of merged -q 0.05 peaks).
-  source: idr
-
 counts:
-  min_width: 100          # consensus peaks outside [min_width, max_width] are not counted
+  # featureCounts width filter for the timecourse / chromvar peak sets
+  min_width: 100          # peaks outside [min_width, max_width] are not counted
   max_width: 5000
+
+# -----------------------------------------------------------------------------
+# Analyses (opt-in)
+# -----------------------------------------------------------------------------
+# By default the pipeline only processes the data: BAMs, bigWigs, QC, peaks,
+# IDR and the consensus peak sets. Each analysis below runs only with
+# `run: true`, and then must say which peak set it uses (`peaks:`):
+#   idr_consensus    results/peaks/consensus/consensus_idr.bed
+#                    (merge of IDR-reproducible peaks per condition)
+#   stringent_union  results/peaks/consensus/union_stringent.bed
+#                    (merge of merged-BAM -q 0.05 peaks per condition)
+#   individual       diff only: DiffBind consensus of per-replicate relaxed
+#                    peaks present in >= diff.min_overlap libraries
+#   <path>.bed       any BED file (first three columns), e.g. a curated set
+# Processing outputs are reused, so switching an analysis on later and
+# re-running only computes that analysis.
 
 # -----------------------------------------------------------------------------
 # Differential accessibility (DiffBind, DESeq2 backend)
 # -----------------------------------------------------------------------------
 diff:
-  # individual = DiffBind consensus from per-replicate relaxed peaks with
-  # minOverlap (the AS28 analysis); consensus = count over the pipeline
-  # consensus peak set instead.
-  peakset: individual
+  run: false
+  # AS28 used individual (DiffBind's own consensus with minOverlap).
+  peaks: ""
   min_overlap: 2
   # dba.count summits (re-centring width). null = DiffBind default.
   summits: null
@@ -164,6 +171,7 @@ diff:
 # Normalization sensitivity check
 # -----------------------------------------------------------------------------
 normcheck:
+  run: false             # needs diff.run; reuses its counted DBA and peak set
   methods: [csaw, quantile]   # csaw = background bins (DBA_NORM_NATIVE, background=TRUE); quantile = QN + limma
   sensitivity_threshold: 0.20 # flag if gained or lost changes by > 20% vs default normalization
   min_abs_change: 10          # ... and by at least this many peaks
@@ -172,6 +180,9 @@ normcheck:
 # Time course (DESeq2 LRT + DEGreport degPatterns)
 # -----------------------------------------------------------------------------
 timecourse:
+  run: false             # needs complete treatment + time columns
+  # AS28 used idr_consensus.
+  peaks: ""
   # Treatments that are a shared baseline included in every series (time 0).
   baseline_treatments: [unstim]
   min_mean_counts: 10
@@ -185,6 +196,9 @@ timecourse:
 # chromVAR
 # -----------------------------------------------------------------------------
 chromvar:
+  run: false
+  # AS28 used idr_consensus.
+  peaks: ""
   # BSgenome package for GC bias and motif matching (e.g.
   # BSgenome.Hsapiens.UCSC.hg38). Empty = use reference.fasta via Rsamtools::FaFile.
   bsgenome: ""
@@ -203,9 +217,11 @@ chromvar:
 # TOBIAS footprinting
 # -----------------------------------------------------------------------------
 footprint:
-  # Peaks for ATACorrect/ScoreBigwig/BINDetect: union (merged -q 0.05 union)
-  # | consensus (the counting peak set above).
-  peaks: union
+  run: false
+  # Regions for ATACorrect/ScoreBigwig/BINDetect. AS28 used stringent_union.
+  peaks: ""
+  # Conditions footprinted and compared by BINDetect ([] = all conditions).
+  conditions: []
   # JASPAR-format motif file. Empty = export JASPAR2020 CORE vertebrates.
   motifs: ""
   atacorrect_extra: ""

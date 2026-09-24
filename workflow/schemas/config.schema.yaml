@@ -28,16 +28,13 @@ properties:
     items: {type: string}
     default: []
   modules:
+    # Processing steps only. Analyses are switched on with <section>.run.
     type: object
     properties:
       qc: {type: boolean, default: true}
       multiqc: {type: boolean, default: true}
       idr: {type: boolean, default: true}
-      diff: {type: boolean, default: true}
-      normcheck: {type: boolean, default: true}
-      timecourse: {type: boolean, default: true}
-      chromvar: {type: boolean, default: true}
-      footprint: {type: boolean, default: true}
+    additionalProperties: false
   trimming:
     type: object
     properties:
@@ -80,10 +77,6 @@ properties:
       single_rep_fallback: {type: string, enum: [stringent, skip], default: stringent}
       allow_failure: {type: boolean, default: true}
     required: [threshold]
-  consensus:
-    type: object
-    properties:
-      source: {type: string, enum: [idr, stringent], default: idr}
   counts:
     type: object
     properties:
@@ -92,7 +85,9 @@ properties:
   diff:
     type: object
     properties:
-      peakset: {type: string, enum: [individual, consensus], default: individual}
+      run: {type: boolean, default: false}
+      # individual | idr_consensus | stringent_union | path to a BED file
+      peaks: {type: string, default: ""}
       min_overlap: {type: number, exclusiveMinimum: 0, default: 2}
       summits: {type: [integer, boolean, "null"], default: null}
       fdr: {type: number, exclusiveMinimum: 0, maximum: 1, default: 0.05}
@@ -101,6 +96,7 @@ properties:
   normcheck:
     type: object
     properties:
+      run: {type: boolean, default: false}
       methods:
         type: array
         items: {type: string, enum: [csaw, quantile]}
@@ -110,6 +106,8 @@ properties:
   timecourse:
     type: object
     properties:
+      run: {type: boolean, default: false}
+      peaks: {type: string, default: ""}
       baseline_treatments: {type: array, items: {type: string}, default: []}
       min_mean_counts: {type: number, minimum: 0, default: 10}
       lrt_padj: {type: number, exclusiveMinimum: 0, maximum: 1, default: 0.01}
@@ -120,6 +118,8 @@ properties:
   chromvar:
     type: object
     properties:
+      run: {type: boolean, default: false}
+      peaks: {type: string, default: ""}
       bsgenome: {type: string, default: ""}
       conda_env: {type: string, default: ""}
       jaspar_collection: {type: string, default: CORE}
@@ -132,7 +132,9 @@ properties:
   footprint:
     type: object
     properties:
-      peaks: {type: string, enum: [union, consensus], default: union}
+      run: {type: boolean, default: false}
+      peaks: {type: string, default: ""}
+      conditions: {type: array, items: {type: string}, default: []}
       motifs: {type: string, default: ""}
       atacorrect_extra: {type: string, default: ""}
       scorebigwig_extra: {type: string, default: ""}
@@ -141,7 +143,7 @@ properties:
     type: object
     additionalProperties: {type: integer, minimum: 1}
 required: [samples, input_mode, reference, modules, trimming, align, qc, peaks, idr,
-           consensus, counts, diff, normcheck, timecourse, chromvar, footprint]
+           counts, diff, normcheck, timecourse, chromvar, footprint]
 allOf:
   - if: {properties: {input_mode: {const: nfcore}}}
     then:

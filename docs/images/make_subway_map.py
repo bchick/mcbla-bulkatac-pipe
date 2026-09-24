@@ -11,7 +11,7 @@ Y = 310  # trunk
 Y_NFC, Y_TC, Y_NORM, Y_CV, Y_FP, Y_QC = 200, 100, 190, 250, 410, 510
 
 LINES = {
-    "core":  ("#24B064", "Core: FASTQ to consensus peaks"),
+    "core":  ("#24B064", "Processing: FASTQ to consensus peak sets"),
     "nfc":   ("#8C8C8C", "nf-core/atacseq BAM input"),
     "qc":    ("#F2B138", "QC"),
     "diff":  ("#1F6FEB", "Differential accessibility"),
@@ -21,13 +21,13 @@ LINES = {
     "fp":    ("#D83B3B", "TF footprinting (TOBIAS)"),
 }
 
-X0, X_BAM, X_MERGED, X_COUNTS = 90, 590, 790, 1090
+X0, X_BAM, X_MERGED, X_PEAKS, X_COUNTS = 90, 590, 790, 1000, 1090
 # fan-out from the counts hub climbs one 45-degree diagonal
 FAN = [(X_COUNTS, Y), (X_COUNTS + 60, Y_CV), (X_COUNTS + 120, Y_NORM), (X_COUNTS + 210, Y_TC)]
 PATHS = {
     "nfc":  [(X0, Y_NFC), (X_BAM - (Y - Y_NFC), Y_NFC), (X_BAM, Y)],
-    "qc":   [(X_BAM, Y), (X_BAM + 60, Y + 60), (X_BAM + 60, Y_QC - 60), (X_BAM + 120, Y_QC), (1120, Y_QC)],
-    "fp":   [(X_MERGED, Y), (X_MERGED + (Y_FP - Y), Y_FP), (1270, Y_FP)],
+    "qc":   [(X_BAM, Y), (X_BAM + 60, Y + 60), (X_BAM + 60, Y_QC - 60), (X_BAM + 120, Y_QC), (1025, Y_QC)],
+    "fp":   [(X_PEAKS, Y), (X_PEAKS + (Y_FP - Y), Y_FP), (1370, Y_FP)],
     "tc":   FAN + [(1460, Y_TC)],
     "norm": FAN[:3] + [(1460, Y_NORM)],
     "cv":   FAN[:2] + [(1270, Y_CV)],
@@ -47,21 +47,21 @@ S = [
     (680, Y, "MACS2\nper replicate", "above", "stop"),
     (X_MERGED, Y, "MACS2 merged\nrelaxed + stringent", "above", "stop"),
     (900, Y, "IDR\nENCODE 0.05", "above", "stop"),
-    (1000, Y, "Consensus\npeaks", "above", "stop"),
-    (X_COUNTS, Y, "featureCounts\nDiffBind count", "below", "hub"),
+    (X_PEAKS, Y, "Consensus\npeak sets", "above", "stop"),
+    (X_COUNTS, Y, "Counts over\nchosen peaks", "below", "hub"),
     # QC
-    (720, Y_QC, "deepTools\nbigWig", "below", "stop"),
-    (820, Y_QC, "TSS\nenrichment", "below", "stop"),
-    (920, Y_QC, "Fingerprint", "below", "stop"),
-    (1020, Y_QC, "Correlation\n+ PCA", "below", "stop"),
-    (1120, Y_QC, "MultiQC", "below", "end"),
-    # footprinting (merged BAMs + stringent peaks)
-    (990, Y_FP, "ATACorrect", "below", "stop"),
-    (1130, Y_FP, "ScoreBigwig", "below", "stop"),
-    (1270, Y_FP, "BINDetect", "below", "end"),
+    (710, Y_QC, "deepTools\nbigWig", "below", "stop"),
+    (790, Y_QC, "TSS\nenrichment", "below", "stop"),
+    (870, Y_QC, "Fingerprint", "below", "stop"),
+    (950, Y_QC, "Correlation\n+ PCA", "above", "stop"),
+    (1025, Y_QC, "MultiQC", "above", "end"),
+    # footprinting (merged BAMs + chosen peak set)
+    (1150, Y_FP, "ATACorrect", "below", "stop"),
+    (1260, Y_FP, "ScoreBigwig", "below", "stop"),
+    (1370, Y_FP, "BINDetect", "below", "end"),
     # differential
     (1270, Y, "DiffBind +\nDESeq2 contrasts", "below", "stop"),
-    (1450, Y, "Tables,\nMA plots", "below", "end"),
+    (1450, Y, "Tables\n+ MA plots", "below", "end"),
     # chromVAR
     (1270, Y_CV, "chromVAR\n(JASPAR2020)", "right", "end"),
     # normalization check
@@ -72,8 +72,8 @@ S = [
     (1460, Y_TC, "degPatterns\nclusters", "above", "end"),
 ]
 
-STAGES = [(40, X_BAM + 30, "1", "Preprocessing"), (X_BAM + 30, X_COUNTS + 30, "2", "Peaks & counts"),
-          (X_COUNTS + 30, W - 20, "3", "Downstream analysis")]
+STAGES = [(40, X_BAM + 30, "1", "Preprocessing"), (X_BAM + 30, X_PEAKS + 52, "2", "Peaks & QC"),
+          (X_PEAKS + 52, W - 20, "3", "Analyses (opt-in)")]
 
 
 def svg(theme):

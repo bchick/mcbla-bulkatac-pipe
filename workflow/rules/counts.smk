@@ -1,7 +1,8 @@
-# Counting.
-#   * featureCounts (fragments, -p --countReadPairs) over the consensus peak
-#     set: input for the time-course module and chromVAR (as in the lab's
-#     05_atac_temporal_clustering/00_preprocessing.Rmd).
+# Counting (built only for the analyses that are switched on).
+#   * featureCounts (fragments, -p --countReadPairs) over the peak set named in
+#     timecourse.peaks / chromvar.peaks (as in the lab's
+#     05_atac_temporal_clustering/00_preprocessing.Rmd), one matrix per set:
+#     results/counts/<peak set>/.
 #   * DiffBind sample sheet + dba.count(minOverlap): the counted DBA object is
 #     shared by the diff and normcheck modules, so the same count matrix is
 #     reused under every normalization (as in 08b, which reused 08's DBA).
@@ -10,13 +11,13 @@ CNT = config["counts"]
 DIFF = config["diff"]
 
 
-rule consensus_saf:
+rule peaks_saf:
     input:
-        consensus_bed(),
+        lambda wildcards: COUNTSETS[wildcards.countset],
     output:
-        "results/counts/consensus_peaks.saf",
+        "results/counts/{countset}/peaks.saf",
     log:
-        "logs/counts/consensus_saf.log",
+        "logs/counts/{countset}.saf.log",
     conda:
         "../envs/counts.yaml"
     params:
@@ -26,6 +27,7 @@ rule consensus_saf:
         """
         (printf "GeneID\\tChr\\tStart\\tEnd\\tStrand\\n"
          awk -v lo={params.min_width} -v hi={params.max_width} 'BEGIN{{OFS="\\t"}}
+             /^(#|track|browser)/ {{next}}
              {{w=$3-$2}} w>=lo && w<=hi {{print $1":"$2+1"-"$3, $1, $2+1, $3, "."}}' {input}
         ) > {output} 2> {log}
         """
@@ -33,14 +35,14 @@ rule consensus_saf:
 
 rule featurecounts:
     input:
-        saf="results/counts/consensus_peaks.saf",
+        saf="results/counts/{countset}/peaks.saf",
         bams=all_lib_bams(),
     output:
-        raw="results/counts/featurecounts.txt",
-        summary="results/counts/featurecounts.txt.summary",
-        matrix="results/counts/consensus_counts.tsv",
+        raw="results/counts/{countset}/featurecounts.txt",
+        summary="results/counts/{countset}/featurecounts.txt.summary",
+        matrix="results/counts/{countset}/peak_counts.tsv",
     log:
-        "logs/counts/featurecounts.log",
+        "logs/counts/{countset}.featurecounts.log",
     conda:
         "../envs/counts.yaml"
     threads: threads("featurecounts", 8)
@@ -87,7 +89,7 @@ rule diffbind_count:
     input:
         sheet="results/counts/diffbind_samplesheet.csv",
         bams=all_lib_bams(STAT_LIBS),
-        consensus=consensus_bed() if DIFF["peakset"] == "consensus" else [],
+        consensus=DIFF_PEAKS[1] if DIFF_PEAKS and DIFF_PEAKS[1] else [],
     output:
         "results/counts/dba_counted.rds",
     log:
@@ -101,6 +103,6 @@ rule diffbind_count:
     params:
         min_overlap=DIFF["min_overlap"],
         summits=DIFF.get("summits"),
-        peakset=DIFF["peakset"],
+        peakset=DIFF_PEAKS[0] if DIFF_PEAKS else "",
     script:
         "../scripts/diffbind_count.R"

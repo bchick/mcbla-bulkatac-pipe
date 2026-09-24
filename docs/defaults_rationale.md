@@ -7,6 +7,10 @@ condition, 22 libraries. Where a default was chosen by benchmarking, the
 benchmark and its result are given here. Where it is an inherited convention,
 it says so.
 
+The analyses (diff, normcheck, timecourse, chromvar, footprint) are off by
+default and have no default peak set. The peak sets listed below are the
+ones AS28 used, and `config/salk_example.yaml` sets them.
+
 ## Trimming and alignment
 
 | Default | Value | Rationale |
@@ -99,7 +103,7 @@ MACS2 at these settings therefore stays the default.
 
 | Default | Value | Rationale |
 |---|---|---|
-| Peak set | per-replicate relaxed peaks, `minOverlap = 2` | The AS28 analysis. DiffBind builds its own consensus of peaks present in at least 2 libraries and re-centres them on summits (DiffBind default). `diff.peakset: consensus` counts over the IDR consensus instead. |
+| Peak set | per-replicate relaxed peaks, `minOverlap = 2` | The AS28 analysis. DiffBind builds its own consensus of peaks present in at least 2 libraries and re-centres them on summits (DiffBind default). Set with `diff.peaks: individual`; `idr_consensus`, `stringent_union` or a BED path count over a fixed set instead. |
 | Normalization | DiffBind default (library size, DESeq2) | Supported by the normalization benchmark below. |
 | Significance | FDR < 0.05 | Tables also carry `Gained_lfc` / `Lost_lfc` counts at \|log2FC\| ≥ 1. |
 | Contrasts | explicit group1 vs group2 by condition | Contrasts are defined within one experiment, so they are not confounded by batch. |
@@ -160,7 +164,7 @@ has not been benchmarked.
 
 | Default | Value | Rationale |
 |---|---|---|
-| Counted peaks | IDR consensus, widths 100 to 5,000 bp, featureCounts fragments | As in the AS28 preprocessing (width filter on the consensus union). |
+| Counted peaks | `timecourse.peaks: idr_consensus` in AS28, widths 100 to 5,000 bp, featureCounts fragments | As in the AS28 preprocessing (width filter on the consensus union). |
 | Low-count filter | rowMeans ≥ 10 | AS28 preprocessing. |
 | VST | `vst(blind = TRUE)` on all included samples | AS28 preprocessing. |
 | Dynamic peaks | DESeq2 LRT `~time` vs `~1` per series, padj < 0.01 **and** range of per-time VST means ≥ 0.5 | The LRT alone selects many peaks with tiny effects at 22-library depth. The effect-size floor keeps clustering on peaks that actually move. |
@@ -172,6 +176,7 @@ has not been benchmarked.
 | Default | Value | Rationale |
 |---|---|---|
 | Motifs | JASPAR2020 CORE vertebrates, latest versions (746 matrices) | Same set as the TOBIAS run, so TF activity and footprints are comparable. |
+| Counted peaks | `chromvar.peaks: idr_consensus` in AS28 | Same counts as the time course. |
 | Motif windows | 200 bp centred on each peak | Motif matches in wide merged peaks dilute the per-peak signal. |
 | Peak filter | ≥ 10 fragments summed over samples | chromVAR recommendation for low-coverage peaks. |
 | GC bias | `addGCBias` with the genome FASTA (or a BSgenome) | FASTA via `Rsamtools::FaFile` avoids requiring a BSgenome package. Set `chromvar.bsgenome` to use one. |
@@ -182,7 +187,7 @@ has not been benchmarked.
 | Default | Value | Rationale |
 |---|---|---|
 | Signal | per-condition merged BAMs | Footprints need depth. Replicates are pooled per condition, as in the AS28 run. |
-| Regions | union of merged stringent peaks | One region set across all conditions keeps BINDetect comparisons like for like. |
+| Regions | `footprint.peaks: stringent_union` in AS28 | One region set across all conditions keeps BINDetect comparisons like for like. |
 | Steps | ATACorrect (Tn5 bias) → ScoreBigwig → one BINDetect across all conditions | TOBIAS 0.16.1, as used for AS28 (746 motifs × 11 conditions). |
 | Motifs | `footprint.motifs`; if empty, JASPAR2020 CORE vertebrates exported with TFBSTools | Same set as chromVAR. |
 

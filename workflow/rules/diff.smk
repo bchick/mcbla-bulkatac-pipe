@@ -5,7 +5,7 @@
 #   -> full + significant tables, summary, MA plots, PCA, correlation heatmap,
 #      analysed DBA saved as RDS.
 
-if MODULES.get("diff", True) and CONTRASTS:
+if RUN_DIFF:
 
     rule diffbind_analyze:
         input:

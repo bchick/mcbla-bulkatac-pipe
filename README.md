@@ -115,13 +115,39 @@ The filtered merged-library BAMs
 `results/bam/`. Alignment and filtering are skipped and everything downstream
 runs unchanged.
 
-### Modules
+### 3. Choose analyses (optional)
 
-Each module can be turned on or off under `modules:` in the config:
-`qc`, `multiqc`, `idr`, `diff`, `normcheck`, `timecourse`, `chromvar`,
-`footprint`. The time-course module also needs complete `treatment` and `time`
-columns. `exclude_conditions` keeps conditions (for example a failed batch) out of
-the count-based statistics but leaves them in peaks, QC and footprinting.
+By default the pipeline only processes the data: final BAMs, bigWigs, QC and
+MultiQC, per-replicate and merged peaks, IDR, and two consensus peak sets.
+`modules:` turns the processing steps `qc`, `multiqc` and `idr` on or off.
+
+Each analysis runs only when you switch it on, and then you must say which
+peak set it uses. There is no silent default:
+
+```yaml
+diff:        {run: true, peaks: individual}        # DiffBind contrasts (contrasts.tsv)
+normcheck:   {run: true}                           # needs diff; reuses its counts
+timecourse:  {run: true, peaks: idr_consensus}     # needs treatment + time columns
+chromvar:    {run: true, peaks: idr_consensus}
+footprint:   {run: true, peaks: stringent_union, conditions: [unstim_0m, egf_30m]}
+```
+
+| `peaks:` | Peak set |
+|---|---|
+| `idr_consensus` | `results/peaks/consensus/consensus_idr.bed`, merge of IDR-reproducible peaks per condition |
+| `stringent_union` | `results/peaks/consensus/union_stringent.bed`, merge of merged-BAM `-q 0.05` peaks per condition |
+| `individual` | diff only: DiffBind's own consensus of per-replicate relaxed peaks in ≥ `diff.min_overlap` libraries |
+| a path to a BED file | any peak set (first three columns), e.g. one curated from an earlier run |
+
+A peak set that's missing or invalid stops the run before any job starts.
+`footprint.conditions` picks the conditions footprinted and compared by
+BINDetect (empty means all). Analyses run on the processed outputs already
+in `results/`, so switching one on later and re-running only computes that
+analysis. `config/salk_example.yaml` switches on every analysis with the peak
+sets AS28 used.
+
+`exclude_conditions` keeps conditions (for example a failed batch) out of the
+count-based statistics but leaves them in peaks and QC.
 
 ### Profiles
 
@@ -142,6 +168,8 @@ See [`docs/outputs.md`](docs/outputs.md). The main files are:
 | `results/peaks/merged_stringent/<cond>_peaks.narrowPeak` | production peaks per condition |
 | `results/peaks/idr/idr_summary.tsv` | IDR peak counts and reproducibility per condition |
 | `results/peaks/consensus/consensus_idr.bed` | consensus of IDR-reproducible peaks |
+| `results/peaks/consensus/union_stringent.bed` | union of stringent peaks across conditions |
+| *Analyses (opt-in):* | |
 | `results/diff/depth/tables/<label>_{all,sig}.tsv` | differential accessibility per contrast |
 | `results/normcheck/norm_verdict.tsv` | normalization-sensitive contrasts |
 | `results/timecourse/<series>/degpatterns_clusters.tsv` | temporal cluster of each dynamic peak |

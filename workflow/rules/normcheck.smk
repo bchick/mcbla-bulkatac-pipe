@@ -12,7 +12,7 @@
 NC = config["normcheck"]
 NC_METHODS = [m for m in NC.get("methods", ["csaw"]) if m in ("csaw", "quantile")]
 
-if MODULES.get("normcheck", True) and CONTRASTS:
+if RUN_NORMCHECK:
 
     rule normcheck_csaw:
         input:

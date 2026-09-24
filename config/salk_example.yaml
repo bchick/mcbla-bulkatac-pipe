@@ -33,7 +33,22 @@ reference:
 # excluded from the AS28 differential and time-course analyses (05, 08).
 exclude_conditions: [egf_15m, hrg_15m]
 
+# The AS28 analyses, with the peak set each one used.
+diff:
+  run: true
+  peaks: individual
+normcheck:
+  run: true
+timecourse:
+  run: true
+  peaks: idr_consensus
+chromvar:
+  run: true
+  peaks: idr_consensus
+
 footprint:
+  run: true
+  peaks: stringent_union
   # JASPAR2020 CORE vertebrates exported for the AS28 TOBIAS run
   motifs: /data/bchick/wproj/mcf7_project/data/reference/jaspar_core_vertebrates_2020.jaspar
 

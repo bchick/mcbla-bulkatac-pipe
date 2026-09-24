@@ -51,13 +51,15 @@ under `logs/`, mirroring this layout.
 | `idr/<cond>_idr.narrowPeak` | reproducible peaks per condition (the best pair when > 2 reps) |
 | `idr/idr_summary.tsv` | Condition, N_Reps, Rep1/Rep2/Oracle/IDR peaks, Reprod_Rate, Selected_Pair, All_Pairs, Status (`OK`, `PARTIAL`, `FAILED`, `single_rep:*`) |
 | `consensus/consensus_idr.bed` (+ `.summary.tsv`) | merge of per-condition reproducible peaks |
-| `consensus/union_stringent.bed` | merge of per-condition stringent peaks (TOBIAS regions) |
+| `consensus/union_stringent.bed` | merge of per-condition stringent peaks |
 
-## Counts (`results/counts/`)
+## Counts (`results/counts/`, analyses only)
+
+Built only for the analyses that are switched on.
 
 | File | Description |
 |---|---|
-| `consensus_peaks.saf`, `consensus_counts.tsv` | consensus peaks (width-filtered) and a fragments × libraries matrix (featureCounts) |
+| `<peak set>/peaks.saf`, `<peak set>/peak_counts.tsv` | peaks (width-filtered) and a fragments × libraries matrix (featureCounts) for each peak set named in `timecourse.peaks` / `chromvar.peaks`; a BED path gets the directory `custom_<file stem>` |
 | `diffbind_samplesheet.csv`, `dba_counted.rds` | DiffBind sample sheet and the counted DBA shared by diff and normcheck |
 
 ## Differential accessibility (`results/diff/depth/`)
@@ -104,4 +106,4 @@ under `logs/`, mirroring this layout.
 |---|---|
 | `atacorrect/<cond>_{corrected,bias,expected,uncorrected}.bw` | TOBIAS ATACorrect tracks |
 | `footprintscores/<cond>_footprints.bw` | TOBIAS ScoreBigwig |
-| `bindetect/bindetect_results.txt` (+ `.xlsx`, per-motif folders, figures) | TOBIAS BINDetect across all conditions |
+| `bindetect/bindetect_results.txt` (+ `.xlsx`, per-motif folders, figures) | TOBIAS BINDetect across `footprint.conditions` |
