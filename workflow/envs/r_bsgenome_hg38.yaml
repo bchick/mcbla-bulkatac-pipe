@@ -1,0 +1,22 @@
+# Optional: R env plus BSgenome.Hsapiens.UCSC.hg38 for chromVAR.
+# Use with  chromvar: {bsgenome: BSgenome.Hsapiens.UCSC.hg38,
+#                      conda_env: ../envs/r_bsgenome_hg38.yaml}
+# Copy this file for other genomes (e.g. bioconductor-bsgenome.mmusculus.ucsc.mm10).
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - r-base =4.3
+  # chromVAR 1.22 (bioconda build) caches Matrix <1.6 S4 methods; with
+  # Matrix 1.6.x getBackgroundPeaks fails ("R_dense_rowSums not found").
+  - r-matrix =1.5
+  - bioconductor-chromvar
+  - bioconductor-motifmatchr
+  - bioconductor-jaspar2020
+  - bioconductor-tfbstools
+  - bioconductor-rsamtools
+  - bioconductor-genomicranges
+  - bioconductor-summarizedexperiment
+  - bioconductor-biocparallel
+  - bioconductor-bsgenome.hsapiens.ucsc.hg38

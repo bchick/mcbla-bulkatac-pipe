@@ -1,0 +1,28 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: >
+  Samplesheet row. nf-core/atacseq columns (sample, fastq_1, fastq_2,
+  replicate) plus condition and the optional time-course columns.
+type: object
+properties:
+  sample:
+    type: string
+    pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    description: nf-core sample group; libraries are named <sample>_REP<replicate>
+  fastq_1: {type: string, description: R1 FASTQ (fastq mode)}
+  fastq_2: {type: string, description: R2 FASTQ (fastq mode; paired-end only)}
+  replicate:
+    type: string
+    pattern: "^[1-9][0-9]*$"
+    description: biological replicate number (integer >= 1)
+  condition:
+    type: string
+    pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    description: group used for merging, IDR and contrasts
+  treatment:
+    type: string
+    description: time-course series (e.g. egf); baseline treatments are shared
+  time:
+    type: string
+    pattern: "^$|^[0-9]+(\\.[0-9]+)?$"
+    description: numeric time point (e.g. minutes); empty if not a time course
+required: [sample, replicate, condition]

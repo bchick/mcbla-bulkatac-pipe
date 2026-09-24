@@ -1,0 +1,9 @@
+# TOBIAS footprinting (version used for the AS28 footprints)
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - tobias =0.16.1
+  # TOBIAS 0.16.1 BINDetect fails with pandas 3 (KeyError: 0)
+  - pandas <3

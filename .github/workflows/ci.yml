@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_test:
+        description: "Also run the .test dataset (align -> peaks -> IDR)"
+        type: boolean
+        default: false
+
+jobs:
+  lint-and-dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          cache: true
+      - name: Build synthetic test data
+        run: pixi run build-test
+      - name: Lint
+        run: pixi run lint
+      - name: Format check
+        run: pixi run fmt-check
+      - name: Dry run (fastq mode)
+        run: pixi run dry
+      - name: Dry run (nf-core mode, fake outdir)
+        run: |
+          fake=$RUNNER_TEMP/nfcore
+          mkdir -p $fake/bwa/merged_library $fake/bwa/merged_replicate
+          tail -n +2 .test/config/samples.tsv | while IFS=$'\t' read s f1 f2 rep rest; do
+            touch $fake/bwa/merged_library/${s}_REP${rep}.mLb.clN.sorted.bam{,.bai}
+            touch $fake/bwa/merged_replicate/${s}.mRp.clN.sorted.bam{,.bai}
+          done
+          printf 'input_mode: nfcore\nnfcore:\n  outdir: %s\n  aligner: auto\n  use_merged_replicate: true\n' "$fake" > $RUNNER_TEMP/nfcore.yaml
+          pixi run snakemake -n -s workflow/Snakefile --directory .test --configfile $RUNNER_TEMP/nfcore.yaml
+      - name: Dry run (example AS28 config)
+        run: |
+          mkdir -p fastq resources/genome/bowtie2
+          for f in $(tail -n +2 config/samples.tsv | cut -f2,3); do touch fastq/$f; done
+          touch resources/genome/{genome.fa,genes.gtf,hg38-blacklist.v2.bed}
+          for s in 1 2 3 4 rev.1 rev.2; do touch resources/genome/bowtie2/genome.$s.bt2; done
+          pixi run snakemake -n
+
+  test-run:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_test
+    runs-on: ubuntu-latest
+    needs: lint-and-dryrun
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          cache: true
+      - run: pixi run build-test
+      - run: pixi run test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            .test/results/qc/alignment_qc_report.tsv
+            .test/results/peaks/*/peak_summary.tsv
+            .test/results/peaks/idr/idr_summary.tsv
+            .test/logs/

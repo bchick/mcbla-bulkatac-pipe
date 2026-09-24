@@ -1,0 +1,229 @@
+# =============================================================================
+# mcbla-bulkatac-pipe configuration
+# =============================================================================
+# Every key is validated against workflow/schemas/config.schema.yaml.
+# Relative paths are resolved against the Snakemake working directory
+# (the repo root, or whatever you pass to --directory).
+#
+# This example describes the AS28 MCF7 design: unstimulated + EGF/HRG at
+# 15/30/60/120/240 min, two replicates each (config/samples.tsv).
+# Reference paths below are placeholders; see config/salk_example.yaml for
+# a filled-in GRCh38 example.
+
+# -----------------------------------------------------------------------------
+# Inputs
+# -----------------------------------------------------------------------------
+# Samplesheet (TSV or CSV). nf-core/atacseq compatible columns
+#   sample, fastq_1, fastq_2, replicate
+# plus
+#   condition  (grouping used for merging, IDR, contrasts; defaults to sample)
+#   treatment  (optional; time-course series, e.g. egf / hrg / unstim)
+#   time       (optional; numeric time point, e.g. minutes)
+# Each library is named <sample>_REP<replicate>, exactly as nf-core does.
+# Rows sharing sample + replicate are runs of one library and are concatenated.
+samples: config/samples.tsv
+
+# Contrasts for the diff and normcheck modules: group1, group2, label
+# (log2 fold change = group1 over group2).
+contrasts: config/contrasts.tsv
+
+# fastq  : full pipeline from FASTQ (trim, align, filter, dedup, ...).
+# nfcore : start from an nf-core/atacseq (2.x) outdir; alignment and
+#          filtering are skipped and the filtered merged-library BAMs
+#          <aligner>/merged_library/<sample>_REP<n>.mLb.clN.sorted.bam are used.
+input_mode: fastq
+
+# Prefix for relative fastq_1/fastq_2 paths in the samplesheet ("" = none).
+fastq_dir: fastq
+
+nfcore:
+  # nf-core/atacseq --outdir
+  outdir: ""
+  # auto | bowtie2 | bwa | chromap | star  (auto = first <aligner>/merged_library found)
+  aligner: auto
+  # Use <aligner>/merged_replicate/<sample>.mRp.clN.sorted.bam as the
+  # per-condition merged BAM (only when a condition is exactly one nf-core
+  # `sample`). false = merge the mLb BAMs with samtools, as in FASTQ mode.
+  use_merged_replicate: false
+
+# -----------------------------------------------------------------------------
+# Reference
+# -----------------------------------------------------------------------------
+reference:
+  # Genome FASTA (plain or .gz). Linked/indexed into results/reference/.
+  fasta: resources/genome/genome.fa
+  # bowtie2 index prefix. Empty = build one from `fasta` (fastq mode only).
+  bowtie2_index: resources/genome/bowtie2/genome
+  # GTF used for the TSS enrichment profile.
+  gtf: resources/genome/genes.gtf
+  # Blacklist BED (ENCODE v2 for hg38/mm10). Empty string disables blacklist
+  # filtering everywhere (reads, peaks, TOBIAS), e.g. for rn6.
+  blacklist: resources/genome/hg38-blacklist.v2.bed
+  # Effective genome size for deepTools RPGC (GRCh38: 2913022398).
+  effective_genome_size: 2913022398
+  # MACS2 -g: hs | mm | ce | dm or a number (rn6: 2375372135).
+  macs2_gsize: hs
+  # Mitochondrial contig name removed after alignment.
+  mito_chrom: chrM
+
+# Conditions left out of count-based statistics (diff, normcheck, timecourse,
+# chromvar). Peaks, IDR, QC and footprinting still use every condition.
+# AS28 excludes the 15 min libraries (a technical batch), see salk_example.yaml.
+exclude_conditions: []
+
+# -----------------------------------------------------------------------------
+# Modules (true/false)
+# -----------------------------------------------------------------------------
+modules:
+  qc: true          # deepTools bigWigs, TSS profile, fragment sizes, correlation, PCA, fingerprint
+  multiqc: true     # MultiQC report
+  idr: true         # IDR per condition + IDR consensus peak set
+  diff: true        # DiffBind (DESeq2) contrasts from contrasts.tsv
+  normcheck: true   # re-run contrasts under csaw / quantile; flag sensitive contrasts
+  timecourse: true  # DESeq2 LRT + degPatterns per treatment series (needs treatment + time)
+  chromvar: true    # chromVAR TF deviations (JASPAR2020)
+  footprint: true   # TOBIAS ATACorrect -> ScoreBigwig -> BINDetect
+
+# -----------------------------------------------------------------------------
+# Trimming (cutadapt)
+# -----------------------------------------------------------------------------
+trimming:
+  adapter_r1: CTGTCTCTTATACACATCT   # Nextera
+  adapter_r2: CTGTCTCTTATACACATCT
+  quality: "20,20"                  # -q
+  min_length: 30                    # -m ; --pair-filter=any is always used
+  extra: ""
+
+# -----------------------------------------------------------------------------
+# Alignment + filtering (bowtie2, samtools)
+# -----------------------------------------------------------------------------
+align:
+  maxins: 2000            # bowtie2 --maxins (plus --no-mixed --no-discordant)
+  min_mapq: 30            # samtools view -q
+  flag_exclude: 2828      # samtools view -F (unmapped, mate unmapped, secondary, QC fail, supplementary); -f 2 always
+  bowtie2_extra: ""
+  sort_mem_per_thread: 768M
+
+# -----------------------------------------------------------------------------
+# QC (deepTools)
+# -----------------------------------------------------------------------------
+qc:
+  bigwig_bin_size: 10     # bamCoverage --binSize, RPGC normalization
+  tss_flank: 2000         # computeMatrix reference-point -a/-b
+  summary_bin_size: 500   # multiBamSummary bins
+  bamcoverage_extra: ""
+
+# -----------------------------------------------------------------------------
+# Peak calling (MACS2 -f BAMPE --keep-dup all)
+# -----------------------------------------------------------------------------
+peaks:
+  relaxed_pvalue: 0.01    # per-replicate and merged "oracle" peaks (IDR input)
+  stringent_qvalue: 0.05  # merged production peaks
+  macs2_extra: ""
+
+# -----------------------------------------------------------------------------
+# IDR
+# -----------------------------------------------------------------------------
+idr:
+  threshold: 0.05         # --idr-threshold; also filters column 5 >= int(-125*log2(t)) (540)
+  rank: p.value
+  # >2 replicates: encode_max_pair = IDR on every replicate pair, keep the pair
+  # with most reproducible peaks (ENCODE "conservative" set); first_two = rep1 vs rep2.
+  multi_rep_strategy: encode_max_pair
+  # 1 replicate: stringent = use merged -q 0.05 peaks in the consensus; skip = leave out.
+  single_rep_fallback: stringent
+  # true: a failed IDR pair is recorded as FAILED in idr_summary.tsv (as in the
+  # source script) instead of stopping the run.
+  allow_failure: true
+
+consensus:
+  # Peak set counted for timecourse + chromVAR: idr (IDR consensus) | stringent
+  # (union of merged -q 0.05 peaks).
+  source: idr
+
+counts:
+  min_width: 100          # consensus peaks outside [min_width, max_width] are not counted
+  max_width: 5000
+
+# -----------------------------------------------------------------------------
+# Differential accessibility (DiffBind, DESeq2 backend)
+# -----------------------------------------------------------------------------
+diff:
+  # individual = DiffBind consensus from per-replicate relaxed peaks with
+  # minOverlap (the AS28 analysis); consensus = count over the pipeline
+  # consensus peak set instead.
+  peakset: individual
+  min_overlap: 2
+  # dba.count summits (re-centring width). null = DiffBind default.
+  summits: null
+  fdr: 0.05
+  lfc: 1.0                # reported as extra |log2FC| columns; not used for FDR calls
+  tissue: NA              # DiffBind "Tissue" column
+
+# -----------------------------------------------------------------------------
+# Normalization sensitivity check
+# -----------------------------------------------------------------------------
+normcheck:
+  methods: [csaw, quantile]   # csaw = background bins (DBA_NORM_NATIVE, background=TRUE); quantile = QN + limma
+  sensitivity_threshold: 0.20 # flag if gained or lost changes by > 20% vs default normalization
+  min_abs_change: 10          # ... and by at least this many peaks
+
+# -----------------------------------------------------------------------------
+# Time course (DESeq2 LRT + DEGreport degPatterns)
+# -----------------------------------------------------------------------------
+timecourse:
+  # Treatments that are a shared baseline included in every series (time 0).
+  baseline_treatments: [unstim]
+  min_mean_counts: 10
+  lrt_padj: 0.01
+  vst_range: 0.5          # max - min of per-time VST means
+  minc: 50                # degPatterns minimum cluster size
+  cutoff: 0.5             # degPatterns cluster tree cutoff
+  seed: 42
+
+# -----------------------------------------------------------------------------
+# chromVAR
+# -----------------------------------------------------------------------------
+chromvar:
+  # BSgenome package for GC bias and motif matching (e.g.
+  # BSgenome.Hsapiens.UCSC.hg38). Empty = use reference.fasta via Rsamtools::FaFile.
+  bsgenome: ""
+  # Conda env for the chromvar rule (path relative to workflow/rules/).
+  # Set to ../envs/r_bsgenome_hg38.yaml together with the bsgenome above.
+  conda_env: ""
+  jaspar_collection: CORE
+  jaspar_tax_group: vertebrates
+  motif_window: 200       # bp, peak-centred window for motif matching
+  min_peak_fragments: 10
+  background_iterations: 200
+  seed: 2025
+  n_top_motifs: 50
+
+# -----------------------------------------------------------------------------
+# TOBIAS footprinting
+# -----------------------------------------------------------------------------
+footprint:
+  # Peaks for ATACorrect/ScoreBigwig/BINDetect: union (merged -q 0.05 union)
+  # | consensus (the counting peak set above).
+  peaks: union
+  # JASPAR-format motif file. Empty = export JASPAR2020 CORE vertebrates.
+  motifs: ""
+  atacorrect_extra: ""
+  scorebigwig_extra: ""
+  bindetect_extra: ""
+
+# -----------------------------------------------------------------------------
+# Threads per rule family
+# -----------------------------------------------------------------------------
+threads:
+  bowtie2_build: 8
+  cutadapt: 8
+  bowtie2: 16
+  samtools: 8
+  deeptools: 8
+  featurecounts: 8
+  diffbind: 8
+  deseq2: 4
+  chromvar: 8
+  tobias: 8
+  tobias_bindetect: 32

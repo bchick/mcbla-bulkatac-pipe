@@ -1,0 +1,10 @@
+sample	fastq_1	fastq_2	replicate	condition	treatment	time
+ctrl_0m	ctrl_0m_r1_R1.fastq.gz	ctrl_0m_r1_R2.fastq.gz	1	ctrl_0m	ctrl	0
+ctrl_0m	ctrl_0m_r2_R1.fastq.gz	ctrl_0m_r2_R2.fastq.gz	2	ctrl_0m	ctrl	0
+stim_30m	stim_30m_r1_R1.fastq.gz	stim_30m_r1_R2.fastq.gz	1	stim_30m	stim	30
+stim_30m	stim_30m_r2_R1.fastq.gz	stim_30m_r2_R2.fastq.gz	2	stim_30m	stim	30
+stim_60m	stim_60m_r1_R1.fastq.gz	stim_60m_r1_R2.fastq.gz	1	stim_60m	stim	60
+stim_60m	stim_60m_r2_R1.fastq.gz	stim_60m_r2_R2.fastq.gz	2	stim_60m	stim	60
+stim_60m	stim_60m_r3a_R1.fastq.gz	stim_60m_r3a_R2.fastq.gz	3	stim_60m	stim	60
+stim_60m	stim_60m_r3b_R1.fastq.gz	stim_60m_r3b_R2.fastq.gz	3	stim_60m	stim	60
+stim_120m	stim_120m_r1_R1.fastq.gz	stim_120m_r1_R2.fastq.gz	1	stim_120m	stim	120

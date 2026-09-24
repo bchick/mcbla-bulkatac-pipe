@@ -1,0 +1,43 @@
+# mcbla-bulkatac-pipe
+# From FASTQ to differential accessibility, TF activity and temporal programs
+# for stimulus and time-course ATAC designs, with benchmarked defaults.
+#
+# Author: Brent Chick (McBla lab, Salk Institute)
+# License: MIT
+
+from snakemake.utils import min_version
+
+min_version("8.20")
+
+
+configfile: "config/config.yaml"
+
+
+include: "rules/common.smk"
+include: "rules/align.smk"
+include: "rules/qc.smk"
+include: "rules/peaks.smk"
+include: "rules/idr.smk"
+include: "rules/counts.smk"
+include: "rules/diff.smk"
+include: "rules/normcheck.smk"
+include: "rules/timecourse.smk"
+include: "rules/chromvar.smk"
+include: "rules/footprint.smk"
+
+
+localrules:
+    all,
+    test_core,
+
+
+rule all:
+    default_target: True
+    input:
+        all_targets(),
+
+
+# Alignment -> peaks -> IDR only (used by the .test dataset and CI).
+rule test_core:
+    input:
+        core_targets(),

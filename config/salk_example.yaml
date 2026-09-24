@@ -1,0 +1,53 @@
+# =============================================================================
+# Salk / McBla lab example: AS28 MCF7 EGF/HRG time course on tanuki
+# =============================================================================
+# Overrides config/config.yaml (Snakemake merges --configfile on top of it):
+#
+#   pixi run snakemake --configfile config/salk_example.yaml --profile profiles/local -n
+#
+# Paths are the ones used by the mcf7_project scripts
+# (scripts/alignment/1.1_atac_align_cc.sh, scripts/atac/2.0-2.2,
+#  analyses/10_tf_footprinting/scripts/*). They are read-only inputs.
+
+samples: config/samples.tsv
+contrasts: config/contrasts.tsv
+input_mode: fastq
+
+# Raw AS28 FASTQs. Note: libraries 3/4/13/14 are named *_5m_* on disk but are
+# the 15 min time point (the lab's downstream code relabels 5m -> 15m);
+# config/samples.tsv maps them to egf_15m / hrg_15m.
+fastq_dir: /data/bchick/wproj/mcf7_project/data/raw/atac/AS28_raw
+
+reference:
+  # Illumina iGenomes GRCh38 (NCBI), chr-prefixed; bowtie2 2.5.2 index
+  fasta: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Sequence/WholeGenomeFasta/genome.fa
+  bowtie2_index: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Sequence/Bowtie2Index/genome
+  gtf: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Annotation/Genes.gencode/genes.gtf
+  blacklist: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Annotation/hg38-blacklist.v2.bed
+  effective_genome_size: 2913022398
+  macs2_gsize: hs
+  mito_chrom: chrM
+
+# The four 15 min libraries are a technical batch (aligned 80-82% vs 89-92%,
+# mean fragment 129-138 bp vs 148-167 bp, FRiP 0.29-0.30 vs 0.10-0.18) and were
+# excluded from the AS28 differential and time-course analyses (05, 08).
+exclude_conditions: [egf_15m, hrg_15m]
+
+footprint:
+  # JASPAR2020 CORE vertebrates exported for the AS28 TOBIAS run
+  motifs: /data/bchick/wproj/mcf7_project/data/reference/jaspar_core_vertebrates_2020.jaspar
+
+threads:
+  bowtie2: 16
+  tobias_bindetect: 32
+
+# -----------------------------------------------------------------------------
+# AS08 (PC12, rn6) would instead use:
+#   reference:
+#     fasta: /data/bchick/wproj/mcf7_project/data/reference/rn6/Sequence/WholeGenomeFasta/genome.fa
+#     bowtie2_index: /data/bchick/wproj/mcf7_project/data/reference/rn6/Sequence/Bowtie2Index/genome
+#     blacklist: ""                 # rn6 has no ENCODE blacklist
+#     effective_genome_size: 2375372135
+#     macs2_gsize: 2375372135
+#   modules: {qc: false}            # no rn6 GTF on disk for the TSS profile
+# -----------------------------------------------------------------------------

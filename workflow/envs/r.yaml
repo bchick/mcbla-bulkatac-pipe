@@ -1,0 +1,29 @@
+# R / Bioconductor steps: DiffBind, csaw + quantile normcheck, DESeq2 LRT +
+# DEGreport, chromVAR. Pinned to the Bioconductor 3.17 release that matches
+# the versions used for the AS28 analyses (DiffBind 3.10.1, DESeq2 1.40.2,
+# DEGreport 1.36.0).
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - r-base =4.3
+  # chromVAR 1.22 (bioconda build) caches Matrix <1.6 S4 methods; with
+  # Matrix 1.6.x getBackgroundPeaks fails ("R_dense_rowSums not found").
+  - r-matrix =1.5
+  - bioconductor-diffbind =3.10
+  - bioconductor-deseq2 =1.40
+  - bioconductor-degreport =1.36
+  - bioconductor-csaw
+  - bioconductor-limma
+  - bioconductor-edger
+  - bioconductor-preprocesscore
+  - bioconductor-chromvar
+  - bioconductor-motifmatchr
+  - bioconductor-jaspar2020
+  - bioconductor-tfbstools
+  - bioconductor-rsamtools
+  - bioconductor-genomicranges
+  - bioconductor-summarizedexperiment
+  - bioconductor-biocparallel
+  - r-ggplot2

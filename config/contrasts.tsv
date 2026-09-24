@@ -1,0 +1,11 @@
+group1	group2	label
+egf_30m	unstim_0m	EGF_30m_vs_US
+hrg_30m	unstim_0m	HRG_30m_vs_US
+egf_60m	unstim_0m	EGF_60m_vs_US
+hrg_60m	unstim_0m	HRG_60m_vs_US
+egf_120m	unstim_0m	EGF_120m_vs_US
+hrg_120m	unstim_0m	HRG_120m_vs_US
+egf_240m	unstim_0m	EGF_240m_vs_US
+hrg_240m	unstim_0m	HRG_240m_vs_US
+hrg_60m	egf_60m	HRG_60m_vs_EGF_60m
+hrg_240m	egf_240m	HRG_240m_vs_EGF_240m
