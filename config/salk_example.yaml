@@ -1,5 +1,5 @@
 # =============================================================================
-# Salk / McBla lab example: AS28 MCF7 EGF/HRG time course on tanuki
+# Salk / McBla lab example: AS28 MCF7 EGF/HRG time course on the lab server
 # =============================================================================
 # Overrides config/config.yaml (Snakemake merges --configfile on top of it):
 #
