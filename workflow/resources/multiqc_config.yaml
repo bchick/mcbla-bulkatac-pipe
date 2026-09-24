@@ -1,0 +1,32 @@
+# MultiQC configuration used by the multiqc rule.
+title: "mcbla-bulkatac-pipe"
+subtitle: "Bulk ATAC-seq QC"
+extra_fn_clean_exts:
+  - ".final"
+  - ".flagstat"
+  - ".cutadapt"
+  - ".bowtie2"
+  - ".markdup"
+  - "_peaks"
+custom_data:
+  alignment_qc:
+    section_name: "Alignment QC (pipeline)"
+    plot_type: "table"
+  peaks_individual:
+    section_name: "Per-replicate peaks (MACS2 -p 0.01)"
+    plot_type: "table"
+  peaks_merged_stringent:
+    section_name: "Per-condition production peaks (MACS2 -q 0.05)"
+    plot_type: "table"
+  idr_summary:
+    section_name: "IDR reproducibility"
+    plot_type: "table"
+sp:
+  alignment_qc:
+    fn: "alignment_qc_mqc.tsv"
+  peaks_individual:
+    fn: "peaks_individual_mqc.tsv"
+  peaks_merged_stringent:
+    fn: "peaks_merged_stringent_mqc.tsv"
+  idr_summary:
+    fn: "idr_summary_mqc.tsv"

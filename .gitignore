@@ -1,8 +1,8 @@
 # Snakemake
 .snakemake/
-results/
-logs/
-benchmarks/
+/results/
+/logs/
+/benchmarks/
 *.snakemake_timestamp
 
 # Test dataset (built by .test/scripts/build_test_data.sh)
@@ -15,7 +15,7 @@ benchmarks/
 .pixi/
 
 # Local resources / references
-resources/
+/resources/
 *.bam
 *.bai
 *.bw
