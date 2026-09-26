@@ -85,6 +85,9 @@ properties:
       relaxed_pvalue: {type: number, exclusiveMinimum: 0, maximum: 1}
       stringent_qvalue: {type: number, exclusiveMinimum: 0, maximum: 1}
       macs2_extra: {type: string, default: ""}
+      fixed_width: {type: integer, minimum: 51, default: 501}
+      fixed_min_spm: {type: number, minimum: 0, default: 5}
+      fixed_min_samples: {type: integer, minimum: 1, default: 2}
     required: [relaxed_pvalue, stringent_qvalue]
   idr:
     type: object
@@ -104,7 +107,7 @@ properties:
     type: object
     properties:
       run: {type: boolean, default: false}
-      # individual | idr_consensus | stringent_union | path to a BED file
+      # individual | idr_consensus | stringent_union | fixed_width | path to a BED file
       peaks: {type: string, default: ""}
       min_overlap: {type: number, exclusiveMinimum: 0, default: 2}
       summits: {type: [integer, boolean, "null"], default: null}

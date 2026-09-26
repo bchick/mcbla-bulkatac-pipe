@@ -332,6 +332,7 @@ def consensus_inputs(wildcards):
 PIPELINE_PEAKSETS = {
     "idr_consensus": "results/peaks/consensus/consensus_idr.bed",
     "stringent_union": "results/peaks/consensus/union_stringent.bed",
+    "fixed_width": "results/peaks/consensus/fixed_width.bed",
 }
 # DiffBind only: its own consensus of per-replicate relaxed peaks (minOverlap).
 DIFFBIND_INDIVIDUAL = "individual"
@@ -376,6 +377,15 @@ def resolve_peaks(section, allow_individual=False):
     stem = re.sub(r"[^A-Za-z0-9]+", "_", Path(value).name.split(".")[0]).strip("_")
     return f"custom_{stem}", value
 
+
+_fw = config["peaks"]
+if _fw.get("fixed_width", 501) % 2 == 0:
+    raise ValueError("peaks.fixed_width must be odd (a summit plus equal flanks).")
+if _fw.get("fixed_min_samples", 2) > len(LIBS):
+    raise ValueError(
+        f"peaks.fixed_min_samples is {_fw.get('fixed_min_samples')}, but there "
+        f"are only {len(LIBS)} libraries."
+    )
 
 RUN_DIFF = _analysis_on("diff")
 RUN_NORMCHECK = _analysis_on("normcheck")
@@ -593,6 +603,7 @@ def core_targets():
         "results/peaks/merged_relaxed/peak_summary.tsv",
         "results/peaks/merged_stringent/peak_summary.tsv",
         "results/peaks/consensus/union_stringent.bed",
+        "results/peaks/consensus/fixed_width.bed",
     ]
     if MODULES.get("idr", True):
         t += [

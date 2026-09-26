@@ -58,6 +58,7 @@ under `logs/`, mirroring this layout.
 | `idr/idr_summary.tsv` | Condition, N_Reps, Rep1/Rep2/Oracle/IDR peaks, Reprod_Rate, Selected_Pair, All_Pairs, Status (`OK`, `PARTIAL`, `FAILED`, `single_rep:*`) |
 | `consensus/consensus_idr.bed` (+ `.summary.tsv`) | merge of per-condition reproducible peaks |
 | `consensus/union_stringent.bed` | merge of per-condition stringent peaks |
+| `consensus/fixed_width.bed` (+ `.summary.tsv`) | 501 bp summit-centred windows (iterative overlap, Corces et al. 2018): name, score per million, number of supporting libraries |
 
 ## Counts (`results/counts/`, analyses only)
 

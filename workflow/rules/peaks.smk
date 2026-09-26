@@ -156,3 +156,51 @@ rule union_stringent:
         "../envs/align.yaml"
     shell:
         "(cat {input} | cut -f1-3 | sort -k1,1 -k2,2n | bedtools merge > {output}) 2> {log}"
+
+
+rule fixed_width_peaks:
+    """Summit-centred fixed-width consensus ("iterative overlap", Corces 2018)."""
+    input:
+        peaks=expand("results/peaks/individual/{lib}_peaks.narrowPeak", lib=LIBS),
+        sizes="results/reference/chrom.sizes",
+    output:
+        temp("results/peaks/consensus/fixed_width.unfiltered.bed"),
+    log:
+        "logs/peaks/fixed_width_peaks.log",
+    conda:
+        "../envs/python.yaml"
+    params:
+        libs=LIBS,
+        width=PK.get("fixed_width", 501),
+        min_spm=PK.get("fixed_min_spm", 5),
+        min_samples=PK.get("fixed_min_samples", 2),
+    script:
+        "../scripts/fixed_width_peaks.py"
+
+
+rule fixed_width_consensus:
+    """Blacklist filter (windows extend past the blacklisted narrowPeaks) + summary."""
+    input:
+        bed="results/peaks/consensus/fixed_width.unfiltered.bed",
+        blacklist=blacklist_input(),
+    output:
+        bed="results/peaks/consensus/fixed_width.bed",
+        summary="results/peaks/consensus/fixed_width.summary.tsv",
+    log:
+        "logs/peaks/fixed_width_consensus.log",
+    conda:
+        "../envs/align.yaml"
+    shell:
+        """
+        (
+        set -euo pipefail
+        if [ -n "{input.blacklist}" ]; then
+            bedtools intersect -v -a {input.bed} -b {input.blacklist} > {output.bed}
+        else
+            cp {input.bed} {output.bed}
+        fi
+        echo "Blacklist: $(wc -l < {input.bed}) -> $(wc -l < {output.bed})"
+        printf "Peaks\tWidth\n%s\t%s\n" "$(wc -l < {output.bed})" \
+            "$(awk 'NR == 1 {{print $3 - $2}}' {output.bed})" > {output.summary}
+        ) > {log} 2>&1
+        """

@@ -120,6 +120,25 @@ MACS2 at these settings therefore stays the default.
 | Failed IDR pair | recorded as `FAILED`, run continues (`allow_failure: true`) | Matches the lab script, where one bad condition does not stop the batch. Set it to false to fail hard. |
 | Consensus | `cat` IDR peaks → `sort` → `bedtools merge` | As in the lab script. Unlike nf-core's merge of all peak calls, only reproducible peaks enter. |
 
+### Fixed-width peak set
+
+`fixed_width` (`results/peaks/consensus/fixed_width.bed`) is the
+summit-centred "iterative overlap" set of Corces et al. 2018, used for the TCGA
+ATAC atlas and by ArchR. It is new in the pipeline and was not part of AS28.
+
+| Default | Value | Rationale |
+|---|---|---|
+| Width | 501 bp (summit ± 250) | Corces et al. 2018. Wide enough for a nucleosome-free region, narrow enough to hold one site. |
+| Input | per-replicate relaxed (`-p 0.01`) summits, all libraries | The same calls IDR uses; one summit per MACS2 peak. |
+| Overlaps | keep the most significant window, drop the ones overlapping it; within each library on −log10 p, then across libraries on score per million (SPM) | Unlike `bedtools merge`, neighbouring sites stay separate instead of chaining into multi-kb regions whose midpoint may not be accessible. |
+| SPM cutoff | ≥ 5 | Corces et al. 2018. SPM rescales each library's scores to sum to 10⁶, so libraries with different depth and peak number are comparable. |
+| Reproducibility | ≥ 2 libraries with an overlapping window (`fixed_min_samples`) | Keeps sites seen in more than one library. |
+
+With the merged sets (`idr_consensus`, `stringent_union`), chromVAR's 200 bp
+motif window sits at the midpoint of a region that can be several kb wide. With
+`fixed_width` it sits on a summit, which is why the README example uses it for
+chromVAR.
+
 ## Differential accessibility (DiffBind)
 
 | Default | Value | Rationale |
@@ -212,7 +231,7 @@ has not been benchmarked.
 |---|---|---|
 | Motifs | JASPAR2020 CORE vertebrates, latest versions (746 matrices) | Same set as the TOBIAS run, so TF activity and footprints are comparable. |
 | Counted peaks | `chromvar.peaks: idr_consensus` in AS28 | Same counts as the time course. |
-| Motif windows | 200 bp centred on each peak | Motif matches in wide merged peaks dilute the per-peak signal. |
+| Motif windows | 200 bp centred on each peak | Motif matches in wide merged peaks dilute the per-peak signal. With `fixed_width` peaks the window is centred on the summit; with merged sets it is centred on the region midpoint. |
 | Peak filter | ≥ 10 fragments summed over samples | chromVAR recommendation for low-coverage peaks. |
 | GC bias | `addGCBias` with the genome FASTA (or a BSgenome) | FASTA via `Rsamtools::FaFile` avoids requiring a BSgenome package. Set `chromvar.bsgenome` to use one. |
 | Background | `getBackgroundPeaks(niterations = 200, w = 0.1)`, `set.seed(2025)` | AS28 settings. |

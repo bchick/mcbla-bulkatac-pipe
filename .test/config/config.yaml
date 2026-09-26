@@ -130,6 +130,15 @@ peaks:
   relaxed_pvalue: 0.01    # per-replicate and merged "oracle" peaks (IDR input)
   stringent_qvalue: 0.05  # merged production peaks
   macs2_extra: ""
+  # fixed_width consensus (results/peaks/consensus/fixed_width.bed): every
+  # per-replicate summit becomes a fixed_width bp window; overlaps are resolved
+  # by keeping the most significant window, within each library and then
+  # across libraries on score per million (SPM); a window is kept when
+  # >= fixed_min_samples libraries have an overlapping window with
+  # SPM >= fixed_min_spm (Corces et al. 2018 "iterative overlap").
+  fixed_width: 501
+  fixed_min_spm: 5
+  fixed_min_samples: 2
 
 # -----------------------------------------------------------------------------
 # IDR
@@ -212,7 +221,7 @@ timecourse:
 chromvar:
   run: true
   # AS28 used idr_consensus.
-  peaks: idr_consensus
+  peaks: fixed_width
   # BSgenome package for GC bias and motif matching (e.g.
   # BSgenome.Hsapiens.UCSC.hg38). Empty = use reference.fasta via Rsamtools::FaFile.
   bsgenome: ""

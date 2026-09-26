@@ -26,7 +26,7 @@ and adds the analysis layer that stimulus and time-course designs need.
 | Trimming, alignment, filtering, dedup | yes (Trim Galore, BWA/Bowtie 2/Chromap/STAR) | yes (cutadapt Nextera, Bowtie 2), or reuses nf-core BAMs |
 | Peak calling | MACS2 per library / merged replicate | MACS2 in four phases: per-replicate relaxed, merged relaxed (IDR oracle), merged stringent (production) |
 | Reproducibility filtering | none (consensus by `bedtools merge` of peak calls) | IDR per condition (ENCODE threshold 0.05), any number of replicates |
-| Consensus peak set | `bedtools merge` of all peaks | merge of IDR-reproducible peaks (or stringent union) |
+| Consensus peak set | `bedtools merge` of all peaks | merge of IDR-reproducible peaks, stringent union, or 501 bp summit-centred windows (iterative overlap) |
 | Differential accessibility | DESeq2 used for PCA and clustering only; no contrasts | DiffBind + DESeq2 on user contrasts, per-contrast tables, MA plots |
 | Normalization comparison | no | same contrasts re-run under csaw background bins and quantile + limma; contrasts that move by >20% are flagged as normalization-sensitive |
 | Time-course programs | no | DESeq2 LRT over time + DEGreport degPatterns clustering per treatment series |
@@ -136,7 +136,7 @@ peak set it uses. There is no silent default:
 diff:        {run: true, peaks: individual}        # DiffBind contrasts (contrasts.tsv)
 normcheck:   {run: true}                           # needs diff; reuses its counts
 timecourse:  {run: true, peaks: idr_consensus}     # needs treatment + time columns
-chromvar:    {run: true, peaks: idr_consensus}
+chromvar:    {run: true, peaks: fixed_width}
 footprint:   {run: true, peaks: stringent_union, conditions: [unstim_0m, egf_30m]}
 ```
 
@@ -144,6 +144,7 @@ footprint:   {run: true, peaks: stringent_union, conditions: [unstim_0m, egf_30m
 |---|---|
 | `idr_consensus` | `results/peaks/consensus/consensus_idr.bed`, merge of IDR-reproducible peaks per condition |
 | `stringent_union` | `results/peaks/consensus/union_stringent.bed`, merge of merged-BAM `-q 0.05` peaks per condition |
+| `fixed_width` | `results/peaks/consensus/fixed_width.bed`, 501 bp windows centred on per-replicate summits, overlaps resolved by significance, kept when ≥ 2 libraries support them (Corces et al. 2018). Merged sets chain neighbouring peaks into regions of several kb; this one keeps one site per window, which suits chromVAR and count-based analyses |
 | `individual` | diff only: DiffBind's own consensus of per-replicate relaxed peaks in ≥ `diff.min_overlap` libraries |
 | a path to a BED file | any peak set (first three columns), e.g. one curated from an earlier run |
 
@@ -233,6 +234,7 @@ it runs:
 * JASPAR 2020: Fornes et al. 2020, *Nucleic Acids Res* 48:D87
 * TOBIAS: Bentsen et al. 2020, *Nat Commun* 11:4267
 * ENCODE blacklist: Amemiya et al. 2019, *Sci Rep* 9:9354
+* Fixed-width peak set: Corces et al. 2018, *Science* 362:eaav1898; Grandi et al. 2022, *Nat Protoc* 17:1518
 
 ## License
 

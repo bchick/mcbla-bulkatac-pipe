@@ -140,6 +140,15 @@ peaks:
   relaxed_pvalue: 0.01    # per-replicate and merged "oracle" peaks (IDR input)
   stringent_qvalue: 0.05  # merged production peaks
   macs2_extra: ""
+  # fixed_width consensus (results/peaks/consensus/fixed_width.bed): every
+  # per-replicate summit becomes a fixed_width bp window; overlaps are resolved
+  # by keeping the most significant window, within each library and then
+  # across libraries on score per million (SPM); a window is kept when
+  # >= fixed_min_samples libraries have an overlapping window with
+  # SPM >= fixed_min_spm (Corces et al. 2018 "iterative overlap").
+  fixed_width: 501
+  fixed_min_spm: 5
+  fixed_min_samples: 2
 
 # -----------------------------------------------------------------------------
 # IDR
@@ -171,6 +180,9 @@ counts:
 #                    (merge of IDR-reproducible peaks per condition)
 #   stringent_union  results/peaks/consensus/union_stringent.bed
 #                    (merge of merged-BAM -q 0.05 peaks per condition)
+#   fixed_width      results/peaks/consensus/fixed_width.bed
+#                    (501 bp summit-centred windows, iterative overlap; the
+#                    usual choice for chromVAR and count-based analyses)
 #   individual       diff only: DiffBind consensus of per-replicate relaxed
 #                    peaks present in >= diff.min_overlap libraries
 #   <path>.bed       any BED file (first three columns), e.g. a curated set
