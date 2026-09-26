@@ -6,7 +6,8 @@
 #   -> bowtie2 --maxins 2000 --no-mixed --no-discordant
 #   -> samtools view -q 30 -f 2 -F 2828, drop chrM
 #   -> bedtools intersect -v blacklist (optional)
-#   -> sort -n -> fixmate -m -> sort -> markdup -r -s -> index, flagstat,
+#   -> sort -n -> fixmate -r -m -> drop orphaned mates (-f 2) -> sort
+#   -> markdup -r -s -> index, flagstat,
 #      fragment-size table, alignment QC table.
 
 
@@ -193,7 +194,7 @@ if INPUT_MODE == "fastq":
             """
 
     rule library_complexity:
-        """ENCODE NRF / PBC1 / PBC2 on the filtered BAM before deduplication.
+        """ENCODE NRF / PBC1 / PBC2 on the orphan-free BAM before deduplication.
 
         One fragment per pair (the leftmost mate, TLEN > 0), keyed by
         chrom, start, TLEN and strand:
@@ -202,7 +203,7 @@ if INPUT_MODE == "fastq":
           PBC2 = fragments seen exactly once / fragments seen exactly twice
         """
         input:
-            "results/bam/tmp/{lib}.filtered.bam",
+            "results/bam/tmp/{lib}.paired.bam",
         output:
             "results/qc/complexity/{lib}.complexity.tsv",
         log:
@@ -237,15 +238,21 @@ if INPUT_MODE == "fastq":
             ) > {log} 2>&1
             """
 
-    rule markdup:
-        """sort -n -> fixmate -m -> sort -> markdup -r -s (duplicates removed)."""
+    rule fix_pairs:
+        """sort -n -> fixmate -r -m -> drop orphans (-f 2) -> sort.
+
+        The per-read MAPQ filter and the blacklist intersect remove reads one at
+        a time, so they can leave a mate without its partner. fixmate clears the
+        proper-pair flag of such orphans and the -f 2 filter drops them (as the
+        ENCODE ATAC pipeline does), so every downstream step sees whole pairs.
+        """
         input:
             "results/bam/tmp/{lib}.filtered.bam",
         output:
-            bam="results/bam/{lib}.final.bam",
-            stats="results/qc/markdup/{lib}.markdup.txt",
+            bam=temp("results/bam/tmp/{lib}.paired.bam"),
+            stats="results/qc/filter_stats/{lib}.pairs.tsv",
         log:
-            "logs/align/{lib}.markdup.log",
+            "logs/align/{lib}.fix_pairs.log",
         conda:
             "../envs/align.yaml"
         threads: threads("samtools", 8)
@@ -255,21 +262,46 @@ if INPUT_MODE == "fastq":
         params:
             tmp=lambda wildcards: f"results/bam/tmp/{wildcards.lib}",
             mem=config["align"].get("sort_mem_per_thread", "768M"),
+            flag_exclude=config["align"]["flag_exclude"],
         shell:
             """
             (
             set -euo pipefail
             samtools sort -@ {threads} -m {params.mem} -n -T {params.tmp}.nsort \
                 -o {params.tmp}.nsorted.bam {input}
-            samtools fixmate -@ {threads} -m {params.tmp}.nsorted.bam {params.tmp}.fixmate.bam
+            samtools fixmate -@ {threads} -r -m {params.tmp}.nsorted.bam - \
+              | samtools view -b -@ 2 -f 2 -F {params.flag_exclude} \
+                  -o {params.tmp}.fixmate.bam -
+            before=$(samtools view -c -@ {threads} {params.tmp}.nsorted.bam)
             rm -f {params.tmp}.nsorted.bam
             samtools sort -@ {threads} -m {params.mem} -T {params.tmp}.csort \
-                -o {params.tmp}.csorted.bam {params.tmp}.fixmate.bam
+                -o {output.bam} {params.tmp}.fixmate.bam
             rm -f {params.tmp}.fixmate.bam
-            samtools markdup -@ {threads} -r -s -f {output.stats} \
-                {params.tmp}.csorted.bam {output.bam}
-            rm -f {params.tmp}.csorted.bam
+            after=$(samtools view -c -@ {threads} {output.bam})
+            printf "pre_pair_filter\t%s\npost_pair_filter\t%s\norphans_removed\t%s\n" \
+                "$before" "$after" "$((before - after))" > {output.stats}
             ) > {log} 2>&1
+            """
+
+    rule markdup:
+        """markdup -r -s on the orphan-free BAM (duplicates removed)."""
+        input:
+            "results/bam/tmp/{lib}.paired.bam",
+        output:
+            bam="results/bam/{lib}.final.bam",
+            stats="results/qc/markdup/{lib}.markdup.txt",
+        log:
+            "logs/align/{lib}.markdup.log",
+        conda:
+            "../envs/align.yaml"
+        threads: threads("samtools", 8)
+        resources:
+            mem_mb=8000,
+            runtime=240,
+        shell:
+            """
+            samtools markdup -@ {threads} -r -s -f {output.stats} \
+                {input} {output.bam} > {log} 2>&1
             """
 
     rule index_bam:
@@ -306,6 +338,7 @@ if INPUT_MODE == "fastq":
             cutadapt=expand("logs/align/{lib}.cutadapt.log", lib=LIBS),
             bowtie2=expand("logs/align/{lib}.bowtie2.log", lib=LIBS),
             filt=expand("results/qc/filter_stats/{lib}.filter_stats.tsv", lib=LIBS),
+            pairs=expand("results/qc/filter_stats/{lib}.pairs.tsv", lib=LIBS),
             markdup=expand("results/qc/markdup/{lib}.markdup.txt", lib=LIBS),
             complexity=expand("results/qc/complexity/{lib}.complexity.tsv", lib=LIBS),
             flagstat=expand("results/qc/flagstat/{lib}.flagstat.txt", lib=LIBS),

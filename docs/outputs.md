@@ -17,11 +17,12 @@ under `logs/`, mirroring this layout.
 
 | File | Description |
 |---|---|
-| `bam/<lib>.final.bam` (+ `.bai`) | MAPQ ≥ 30, proper pairs, no chrM, blacklist-filtered, duplicates removed. In nfcore mode, a link to `<aligner>/merged_library/<lib>.mLb.clN.sorted.bam` |
+| `bam/<lib>.final.bam` (+ `.bai`) | MAPQ ≥ 30, proper pairs, no chrM, blacklist-filtered, orphaned mates dropped, duplicates removed. In nfcore mode, a link to `<aligner>/merged_library/<lib>.mLb.clN.sorted.bam` |
 | `bam/merged/<cond>.merged.bam` (+ `.bai`) | replicates merged per condition (MACS2 merged calls, TOBIAS) |
-| `qc/alignment_qc_report.tsv` | Sample, Raw_Reads, Trimmed_Reads, Aligned_Reads, Aligned_Pct, ChrM_Reads, ChrM_Pct, Blacklist_Removed, Final_Reads, Dup_Pct, Mean_FragSize, NRF, PBC1, PBC2 (fastq mode) |
+| `qc/alignment_qc_report.tsv` | Sample, Raw_Reads, Trimmed_Reads, Aligned_Reads, Aligned_Pct, ChrM_Reads, ChrM_Pct, Blacklist_Removed, Orphans_Removed, Final_Reads, Dup_Pct, Mean_FragSize, NRF, PBC1, PBC2 (fastq mode) |
 | `qc/complexity/<lib>.complexity.tsv` | ENCODE library complexity (NRF, PBC1, PBC2) on the filtered BAM before deduplication (fastq mode) |
 | `qc/filter_stats/<lib>.filter_stats.tsv` | read counts before/after the mito and blacklist filters |
+| `qc/filter_stats/<lib>.pairs.tsv` | records before/after dropping mates orphaned by the MAPQ and blacklist filters |
 | `qc/markdup/<lib>.markdup.txt` | `samtools markdup -f` statistics |
 | `qc/flagstat/<lib>.flagstat.txt` | `samtools flagstat` of the final BAM |
 | `qc/fragment_sizes/<lib>_fragment_sizes.tsv` | fragment size (bp) and count, < 1 kb |

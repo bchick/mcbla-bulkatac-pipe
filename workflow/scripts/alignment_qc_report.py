@@ -2,8 +2,8 @@
 by 1.1_atac_align_cc.sh).
 
 Columns: Sample, Raw_Reads, Trimmed_Reads, Aligned_Reads, Aligned_Pct,
-ChrM_Reads, ChrM_Pct, Blacklist_Removed, Final_Reads, Dup_Pct, Mean_FragSize,
-NRF, PBC1, PBC2
+ChrM_Reads, ChrM_Pct, Blacklist_Removed, Orphans_Removed, Final_Reads, Dup_Pct,
+Mean_FragSize, NRF, PBC1, PBC2
 
 Differences from the shell original (deliberate):
   * Raw_Reads comes from cutadapt's "Total read pairs processed" instead of a
@@ -48,7 +48,8 @@ def pct(num, den):
 
 header = [
     "Sample", "Raw_Reads", "Trimmed_Reads", "Aligned_Reads", "Aligned_Pct",
-    "ChrM_Reads", "ChrM_Pct", "Blacklist_Removed", "Final_Reads", "Dup_Pct",
+    "ChrM_Reads", "ChrM_Pct", "Blacklist_Removed", "Orphans_Removed",
+    "Final_Reads", "Dup_Pct",
     "Mean_FragSize", "NRF", "PBC1", "PBC2",
 ]
 
@@ -63,6 +64,7 @@ for i, lib in enumerate(sm.params.libs):
     total = filt.get("total_aligned", "NA")
     mito = filt.get("mito_reads", "NA")
     bl = filt.get("blacklist_removed", "NA")
+    orphans = kv(sm.input.pairs[i]).get("orphans_removed", "NA")
     final = grab(sm.input.flagstat[i], r"^(\d+) \+ \d+ in total")
     examined = grab(sm.input.markdup[i], r"^EXAMINED:\s+(\d+)")
     dups = grab(sm.input.markdup[i], r"^DUPLICATE TOTAL:\s+(\d+)")
@@ -78,7 +80,7 @@ for i, lib in enumerate(sm.params.libs):
     rows.append([
         lib, raw, trimmed, total,
         f"{aligned_pct}%" if aligned_pct != "NA" else "NA",
-        mito, pct(mito, total), bl, final, pct(dups, examined), mean_frag,
+        mito, pct(mito, total), bl, orphans, final, pct(dups, examined), mean_frag,
         cx.get("NRF", "NA"), cx.get("PBC1", "NA"), cx.get("PBC2", "NA"),
     ])
 

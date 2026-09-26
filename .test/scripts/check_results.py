@@ -10,10 +10,14 @@ Checks:
     dba.normalize() in the DESeq2 test, so csaw and depth gave identical
     p-values while only Fold moved. When the reported folds differ, the
     p-values must differ too.
+  * final BAMs hold whole pairs only: every record is properly paired
+    (flagstat). The per-read MAPQ and blacklist filters used to leave
+    orphaned mates behind.
 """
 
 import csv
 import os
+import re
 import sys
 
 RESULTS = sys.argv[1] if len(sys.argv) > 1 else ".test/results"
@@ -54,7 +58,27 @@ def check_csaw():
             print(f"ok  csaw {name}: fold moved={fold_moved}, p-values moved={p_moved}")
 
 
+def check_pairs():
+    flag_dir = os.path.join(RESULTS, "qc/flagstat")
+    files = sorted(f for f in os.listdir(flag_dir) if f.endswith(".flagstat.txt"))
+    if not files:
+        failures.append(f"no flagstat files in {flag_dir}")
+    for name in files:
+        with open(os.path.join(flag_dir, name)) as fh:
+            text = fh.read()
+        total = int(re.search(r"^(\d+) \+ \d+ in total", text, re.M).group(1))
+        proper = int(re.search(r"^(\d+) \+ \d+ properly paired", text, re.M).group(1))
+        if proper != total:
+            failures.append(
+                f"{name}: {total - proper} of {total} records are not properly "
+                "paired (orphaned mates in the final BAM)"
+            )
+        else:
+            print(f"ok  pairs {name}: {total} records, all properly paired")
+
+
 check_csaw()
+check_pairs()
 
 if failures:
     for f in failures:
