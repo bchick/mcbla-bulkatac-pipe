@@ -192,6 +192,51 @@ if INPUT_MODE == "fastq":
             ) > {log} 2>&1
             """
 
+    rule library_complexity:
+        """ENCODE NRF / PBC1 / PBC2 on the filtered BAM before deduplication.
+
+        One fragment per pair (the leftmost mate, TLEN > 0), keyed by
+        chrom, start, TLEN and strand:
+          NRF  = distinct fragments / all fragments
+          PBC1 = fragments seen exactly once / distinct fragments
+          PBC2 = fragments seen exactly once / fragments seen exactly twice
+        """
+        input:
+            "results/bam/tmp/{lib}.filtered.bam",
+        output:
+            "results/qc/complexity/{lib}.complexity.tsv",
+        log:
+            "logs/align/{lib}.complexity.log",
+        conda:
+            "../envs/align.yaml"
+        threads: threads("samtools", 4)
+        resources:
+            mem_mb=8000,
+            runtime=240,
+        params:
+            tmp=lambda wildcards: f"results/bam/tmp/{wildcards.lib}.complexity",
+        shell:
+            """
+            (
+            set -euo pipefail
+            mkdir -p {params.tmp}
+            samtools view -@ {threads} -F 2308 {input} \
+              | awk 'BEGIN{{OFS="\\t"}} $9 > 0 {{print $3, $4, $9, int($2 / 16) % 2}}' \
+              | LC_ALL=C sort -S 4G --parallel={threads} -T {params.tmp} \
+              | uniq -c \
+              | awk 'BEGIN{{OFS="\\t"}}
+                     {{t += $1; d++; if ($1 == 1) m1++; if ($1 == 2) m2++}}
+                     END{{
+                       nrf  = (t > 0) ? sprintf("%.4f", d / t) : "NA"
+                       pbc1 = (d > 0) ? sprintf("%.4f", m1 / d) : "NA"
+                       pbc2 = (m2 > 0) ? sprintf("%.4f", m1 / m2) : "NA"
+                       print "Total_Fragments", "Distinct_Fragments", "One_Read", "Two_Reads", "NRF", "PBC1", "PBC2"
+                       print t + 0, d + 0, m1 + 0, m2 + 0, nrf, pbc1, pbc2
+                     }}' > {output}
+            rm -rf {params.tmp}
+            ) > {log} 2>&1
+            """
+
     rule markdup:
         """sort -n -> fixmate -m -> sort -> markdup -r -s (duplicates removed)."""
         input:
@@ -262,6 +307,7 @@ if INPUT_MODE == "fastq":
             bowtie2=expand("logs/align/{lib}.bowtie2.log", lib=LIBS),
             filt=expand("results/qc/filter_stats/{lib}.filter_stats.tsv", lib=LIBS),
             markdup=expand("results/qc/markdup/{lib}.markdup.txt", lib=LIBS),
+            complexity=expand("results/qc/complexity/{lib}.complexity.tsv", lib=LIBS),
             flagstat=expand("results/qc/flagstat/{lib}.flagstat.txt", lib=LIBS),
             frag=expand("results/qc/fragment_sizes/{lib}_fragment_sizes.tsv", lib=LIBS),
         output:

@@ -191,6 +191,144 @@ rule fingerprint:
         """
 
 
+# ---------------------------------------------------------------------------
+# QC metrics with ENCODE ATAC-seq thresholds -> results/qc/qc_summary.tsv
+# ---------------------------------------------------------------------------
+if INPUT_MODE == "fastq":
+
+    rule fastqc:
+        """FastQC on the raw reads (runs of one library concatenated)."""
+        input:
+            unpack(trim_inputs),
+        output:
+            r1="results/qc/fastqc/{lib}_R1_fastqc.zip",
+            r2="results/qc/fastqc/{lib}_R2_fastqc.zip",
+        log:
+            "logs/qc/{lib}.fastqc.log",
+        conda:
+            "../envs/fastqc.yaml"
+        threads: 2
+        resources:
+            mem_mb=2000,
+            runtime=240,
+        params:
+            outdir=lambda wildcards, output: os.path.dirname(output.r1),
+        shell:
+            """
+            (
+            set -euo pipefail
+            tmp=$(mktemp -d)
+            # name the reads after the library so MultiQC shows library names
+            ln -s "$(realpath {input.r1})" "$tmp/{wildcards.lib}_R1.fastq.gz"
+            ln -s "$(realpath {input.r2})" "$tmp/{wildcards.lib}_R2.fastq.gz"
+            fastqc --threads {threads} --outdir "$tmp" \
+                "$tmp/{wildcards.lib}_R1.fastq.gz" "$tmp/{wildcards.lib}_R2.fastq.gz"
+            mv "$tmp/{wildcards.lib}_R1_fastqc.zip" {output.r1}
+            mv "$tmp/{wildcards.lib}_R2_fastqc.zip" {output.r2}
+            rm -rf "$tmp"
+            ) > {log} 2>&1
+            """
+
+
+rule tss_sites:
+    """Unique transcript TSSs from the GTF (gene TSSs if it has no transcripts)."""
+    input:
+        gtf=REF["gtf"],
+    output:
+        "results/reference/tss.bed",
+    log:
+        "logs/qc/tss_sites.log",
+    conda:
+        "../envs/align.yaml"
+    shell:
+        """
+        (
+        set -euo pipefail
+        for feature in transcript gene; do
+            zcat -f {input.gtf} \
+              | awk -F'\t' -v f=$feature 'BEGIN{{OFS="\t"}} $3 == f {{
+                    p = ($7 == "-") ? $5 - 1 : $4 - 1; print $1, p, p + 1, ".", ".", $7}}' \
+              | LC_ALL=C sort -u -k1,1 -k2,2n -k6,6 > {output}
+            [ -s {output} ] && break
+        done
+        echo "TSSs: $(wc -l < {output})"
+        ) > {log} 2>&1
+        """
+
+
+rule tss_enrichment:
+    input:
+        bam="results/bam/{lib}.final.bam",
+        bai="results/bam/{lib}.final.bam.bai",
+        tss="results/reference/tss.bed",
+    output:
+        tsv="results/qc/tss/{lib}.tss_enrichment.tsv",
+        profile="results/qc/tss/{lib}.tss_profile.tsv",
+    log:
+        "logs/qc/{lib}.tss_enrichment.log",
+    conda:
+        "../envs/deeptools.yaml"
+    resources:
+        mem_mb=4000,
+        runtime=240,
+    params:
+        flank=DT["tss_flank"],
+        edge=DT.get("tss_edge", 100),
+        smooth=DT.get("tss_smooth", 20),
+        mito=MITO,
+    script:
+        "../scripts/tss_enrichment.py"
+
+
+rule frip_library:
+    """FRiP of one library over its condition's merged stringent peaks."""
+    input:
+        bam="results/bam/{lib}.final.bam",
+        bai="results/bam/{lib}.final.bam.bai",
+        peaks=lambda wildcards: (
+            "results/peaks/merged_stringent/"
+            f"{LIBRARIES.loc[wildcards.lib, 'condition']}_peaks.narrowPeak"
+        ),
+    output:
+        "results/qc/frip/{lib}.frip.tsv",
+    log:
+        "logs/qc/{lib}.frip.log",
+    conda:
+        "../envs/align.yaml"
+    threads: threads("samtools", 4)
+    shell:
+        """
+        (
+        set -euo pipefail
+        total=$(samtools view -@ {threads} -c -F 2304 {input.bam})
+        inpk=0
+        if [ -s {input.peaks} ]; then
+            inpk=$(samtools view -@ {threads} -c -F 2304 -L {input.peaks} {input.bam})
+        fi
+        frip=$(awk -v a="$inpk" -v b="$total" 'BEGIN{{ if (b > 0) printf "%.4f", a / b; else print "NA" }}')
+        printf "Sample\tReads\tReads_In_Peaks\tFRiP\n%s\t%s\t%s\t%s\n" \
+            "{wildcards.lib}" "$total" "$inpk" "$frip" > {output}
+        ) > {log} 2>&1
+        """
+
+
+rule qc_summary:
+    input:
+        unpack(qc_summary_inputs),
+    output:
+        "results/qc/qc_summary.tsv",
+    log:
+        "logs/qc/qc_summary.log",
+    conda:
+        "../envs/python.yaml"
+    params:
+        libs=LIBS,
+        conditions=[LIBRARIES.loc[l, "condition"] for l in LIBS],
+        thresholds=QC_THRESHOLDS,
+    script:
+        "../scripts/qc_summary.py"
+
+
 rule multiqc:
     input:
         multiqc_inputs,
@@ -214,6 +352,7 @@ rule multiqc:
               *individual/peak_summary.tsv) dest=peaks_individual_mqc.tsv ;;
               *merged_stringent/peak_summary.tsv) dest=peaks_merged_stringent_mqc.tsv ;;
               *idr_summary.tsv) dest=idr_summary_mqc.tsv ;;
+              *qc_summary.tsv) dest=qc_summary_mqc.tsv ;;
               *) dest="$base" ;;
             esac
             ln -sf "$(realpath "$f")" "$stage/$dest"

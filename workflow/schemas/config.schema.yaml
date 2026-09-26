@@ -60,6 +60,20 @@ properties:
       tss_flank: {type: integer, minimum: 1}
       summary_bin_size: {type: integer, minimum: 1}
       bamcoverage_extra: {type: string, default: ""}
+      tss_edge: {type: integer, minimum: 1, default: 100}
+      tss_smooth: {type: integer, minimum: 1, default: 20}
+      thresholds:
+        type: object
+        additionalProperties: false
+        description: "[pass, warn] per metric: >= pass is PASS, >= warn is WARN, else FAIL"
+        properties:
+          fragments: &pair {type: array, items: {type: number}, minItems: 2, maxItems: 2}
+          aligned_pct: *pair
+          nrf: *pair
+          pbc1: *pair
+          pbc2: *pair
+          frip: *pair
+          tss_enrichment: *pair
     required: [bigwig_bin_size, tss_flank, summary_bin_size]
   peaks:
     type: object

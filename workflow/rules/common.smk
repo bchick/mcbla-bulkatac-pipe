@@ -445,6 +445,31 @@ def timecourse_series():
     return [t for t in dict.fromkeys(keep["treatment"]) if t not in base]
 
 
+# ENCODE ATAC-seq standards; config qc.thresholds overrides per metric.
+QC_THRESHOLDS = {
+    "fragments": [25000000, 15000000],
+    "aligned_pct": [95, 80],
+    "nrf": [0.9, 0.7],
+    "pbc1": [0.9, 0.7],
+    "pbc2": [3, 1],
+    "frip": [0.3, 0.2],
+    "tss_enrichment": [7, 5],
+}
+QC_THRESHOLDS.update(config["qc"].get("thresholds") or {})
+
+
+def qc_summary_inputs(wildcards):
+    files = {
+        "flagstat": expand("results/qc/flagstat/{lib}.flagstat.txt", lib=LIBS),
+        "frip": expand("results/qc/frip/{lib}.frip.tsv", lib=LIBS),
+    }
+    if INPUT_MODE == "fastq":
+        files["report"] = "results/qc/alignment_qc_report.tsv"
+    if MODULES.get("qc", True):
+        files["tss"] = expand("results/qc/tss/{lib}.tss_enrichment.tsv", lib=LIBS)
+    return files
+
+
 def multiqc_inputs(wildcards):
     files = expand("results/qc/flagstat/{lib}.flagstat.txt", lib=LIBS)
     if INPUT_MODE == "fastq":
@@ -452,7 +477,12 @@ def multiqc_inputs(wildcards):
         files += expand("logs/align/{lib}.bowtie2.log", lib=LIBS)
         files += expand("results/qc/markdup/{lib}.markdup.txt", lib=LIBS)
         files.append("results/qc/alignment_qc_report.tsv")
+    files.append("results/qc/qc_summary.tsv")
     if MODULES.get("qc", True):
+        if INPUT_MODE == "fastq":
+            files += expand(
+                "results/qc/fastqc/{lib}_R{r}_fastqc.zip", lib=LIBS, r=["1", "2"]
+            )
         files += [
             "results/qc/deeptools/tss_enrichment_profile.tab",
             "results/qc/deeptools/fragment_size_table.tsv",
@@ -513,6 +543,7 @@ def core_targets():
 def processing_targets():
     """Default target: processed data (BAMs, peaks, IDR, consensus sets, QC)."""
     t = core_targets()
+    t.append("results/qc/qc_summary.tsv")
     if MODULES.get("qc", True):
         t += expand("results/bigwig/{l}.bw", l=LIBS)
         t += [

@@ -32,6 +32,26 @@ ones AS28 used, and `config/salk_example.yaml` sets them.
 | Effective genome size | 2,913,022,398 (GRCh38) | Used for every human dataset in the lab. For rn6 use 2,375,372,135. |
 | TSS profile | ±2 kb | Standard ATAC enrichment check. |
 | Correlation / PCA | multiBamSummary 500 bp bins, Spearman | Genome-wide and independent of peak calls, so batch effects show up before any peak-based analysis. |
+| TSS enrichment score | Tn5 cut sites (+4/−5), ±2 kb, background = outer 100 bp at each end, 20 bp smoothing, maximum | The ENCODE ATAC definition, so the ENCODE thresholds apply. The deepTools profile uses RPGC fragment coverage and gives lower, non-comparable values. |
+| Library complexity | NRF, PBC1, PBC2 on the filtered BAM before dedup, one fragment per pair | ENCODE definitions. Computed before duplicates are removed, otherwise they are trivially 1. |
+| FRiP | reads in the condition's merged stringent (`-q 0.05`) peaks | The per-replicate relaxed (`-p 0.01`) peaks in `peak_summary.tsv` inflate FRiP; the stringent set is closer to ENCODE's replicated peaks. |
+
+### QC flags
+
+`results/qc/qc_summary.tsv` flags each library against `qc.thresholds`
+(`[pass, warn]`: at or above pass is PASS, at or above warn is WARN, below is
+FAIL). The flags are reported, never enforced: a FAIL does not stop the run
+or drop the library. Use `exclude_conditions` for that.
+
+| Metric | Pass | Warn | Source |
+|---|---|---|---|
+| Fragments (non-dup, non-mito) | 25 M | 15 M | ENCODE 25 M; the 15 M warn level is ours |
+| Alignment rate | 95% | 80% | ENCODE |
+| NRF | 0.9 | 0.7 | ENCODE |
+| PBC1 | 0.9 | 0.7 | ENCODE |
+| PBC2 | 3 | 1 | ENCODE |
+| FRiP | 0.3 | 0.2 | ENCODE |
+| TSS enrichment | 7 | 5 | ENCODE, GRCh38 RefSeq TSSs. mm10: 15 / 10. Scores depend on the TSS annotation, so treat the cut-offs as approximate with GENCODE |
 
 The QC table is what found the AS28 15 min technical batch. The four 15 min
 libraries aligned at 80.1 to 82.3% (the other 18: 89.1 to 92.3%), had a mean
@@ -207,6 +227,6 @@ has not been benchmarked.
 
 Pinned per stage in `workflow/envs/` to the versions of the lab toolchain:
 bowtie2 2.5.2, samtools 1.13, bedtools 2.30.0, cutadapt 4.6, macs2 2.2.9.1,
-deeptools 3.5.4, multiqc 1.17, idr 2.0.4.2, subread 2.0.3, TOBIAS 0.16.1, and
+deeptools 3.5.4, multiqc 1.17, fastqc 0.12.1 (new here, not from the lab toolchain), idr 2.0.4.2, subread 2.0.3, TOBIAS 0.16.1, and
 Bioconductor 3.17 with DiffBind 3.10, DESeq2 1.40 and DEGreport 1.36. They
 are separate environments because the old Python tools do not co-solve.

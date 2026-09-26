@@ -101,6 +101,23 @@ qc:
   tss_flank: 2000         # computeMatrix reference-point -a/-b
   summary_bin_size: 500   # multiBamSummary bins
   bamcoverage_extra: ""
+  # TSS enrichment score (Tn5 cut sites, +4/-5 shifted, within +/- tss_flank):
+  # aggregate profile / mean of the outer tss_edge bp at each end, smoothed
+  # over tss_smooth bp; the score is its maximum (ENCODE ATAC definition).
+  tss_edge: 100
+  tss_smooth: 20
+  # QC flags in results/qc/qc_summary.tsv: [pass, warn] per metric.
+  # >= pass -> PASS, >= warn -> WARN, else FAIL. Values are the ENCODE ATAC-seq
+  # standards ("ideal" / "acceptable") except where noted. Flags are reported,
+  # never enforced.
+  thresholds:
+    fragments: [25000000, 15000000]  # non-dup, non-mito fragments; ENCODE 25M (15M warn is ours)
+    aligned_pct: [95, 80]
+    nrf: [0.9, 0.7]                  # non-redundant fraction
+    pbc1: [0.9, 0.7]                 # PCR bottleneck coefficient 1
+    pbc2: [3, 1]                     # PCR bottleneck coefficient 2
+    frip: [0.3, 0.2]                 # over the condition's merged stringent peaks
+    tss_enrichment: [7, 5]           # GRCh38; mm10: [15, 10]
 
 # -----------------------------------------------------------------------------
 # Peak calling (MACS2 -f BAMPE --keep-dup all)

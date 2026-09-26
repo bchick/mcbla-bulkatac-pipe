@@ -2,7 +2,8 @@
 by 1.1_atac_align_cc.sh).
 
 Columns: Sample, Raw_Reads, Trimmed_Reads, Aligned_Reads, Aligned_Pct,
-ChrM_Reads, ChrM_Pct, Blacklist_Removed, Final_Reads, Dup_Pct, Mean_FragSize
+ChrM_Reads, ChrM_Pct, Blacklist_Removed, Final_Reads, Dup_Pct, Mean_FragSize,
+NRF, PBC1, PBC2
 
 Differences from the shell original (deliberate):
   * Raw_Reads comes from cutadapt's "Total read pairs processed" instead of a
@@ -48,7 +49,7 @@ def pct(num, den):
 header = [
     "Sample", "Raw_Reads", "Trimmed_Reads", "Aligned_Reads", "Aligned_Pct",
     "ChrM_Reads", "ChrM_Pct", "Blacklist_Removed", "Final_Reads", "Dup_Pct",
-    "Mean_FragSize",
+    "Mean_FragSize", "NRF", "PBC1", "PBC2",
 ]
 
 rows = []
@@ -72,10 +73,13 @@ for i, lib in enumerate(sm.params.libs):
             s += int(size) * int(count)
             n += int(count)
     mean_frag = f"{s / n:.0f}" if n else "NA"
+    with open(sm.input.complexity[i]) as fh:
+        cx = dict(zip(*(line.rstrip("\n").split("\t") for line in fh)))
     rows.append([
         lib, raw, trimmed, total,
         f"{aligned_pct}%" if aligned_pct != "NA" else "NA",
         mito, pct(mito, total), bl, final, pct(dups, examined), mean_frag,
+        cx.get("NRF", "NA"), cx.get("PBC1", "NA"), cx.get("PBC2", "NA"),
     ])
 
 with open(sm.output[0], "w") as out:

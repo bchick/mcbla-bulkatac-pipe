@@ -19,7 +19,8 @@ under `logs/`, mirroring this layout.
 |---|---|
 | `bam/<lib>.final.bam` (+ `.bai`) | MAPQ ≥ 30, proper pairs, no chrM, blacklist-filtered, duplicates removed. In nfcore mode, a link to `<aligner>/merged_library/<lib>.mLb.clN.sorted.bam` |
 | `bam/merged/<cond>.merged.bam` (+ `.bai`) | replicates merged per condition (MACS2 merged calls, TOBIAS) |
-| `qc/alignment_qc_report.tsv` | Sample, Raw_Reads, Trimmed_Reads, Aligned_Reads, Aligned_Pct, ChrM_Reads, ChrM_Pct, Blacklist_Removed, Final_Reads, Dup_Pct, Mean_FragSize (fastq mode) |
+| `qc/alignment_qc_report.tsv` | Sample, Raw_Reads, Trimmed_Reads, Aligned_Reads, Aligned_Pct, ChrM_Reads, ChrM_Pct, Blacklist_Removed, Final_Reads, Dup_Pct, Mean_FragSize, NRF, PBC1, PBC2 (fastq mode) |
+| `qc/complexity/<lib>.complexity.tsv` | ENCODE library complexity (NRF, PBC1, PBC2) on the filtered BAM before deduplication (fastq mode) |
 | `qc/filter_stats/<lib>.filter_stats.tsv` | read counts before/after the mito and blacklist filters |
 | `qc/markdup/<lib>.markdup.txt` | `samtools markdup -f` statistics |
 | `qc/flagstat/<lib>.flagstat.txt` | `samtools flagstat` of the final BAM |
@@ -29,6 +30,10 @@ under `logs/`, mirroring this layout.
 
 | File | Description |
 |---|---|
+| `qc/qc_summary.tsv` | one row per library: fragments, alignment %, NRF, PBC1, PBC2, FRiP, TSS enrichment, each with a PASS / WARN / FAIL flag against `qc.thresholds` (ENCODE ATAC standards), plus `Overall` and `Not_Passing` |
+| `qc/tss/<lib>.tss_enrichment.tsv`, `<lib>.tss_profile.tsv` | TSS enrichment score (Tn5 cut sites, ENCODE definition) and its ±2 kb profile |
+| `qc/frip/<lib>.frip.tsv` | FRiP of the library over its condition's merged stringent peaks |
+| `qc/fastqc/<lib>_R{1,2}_fastqc.zip` | FastQC of the raw reads (fastq mode) |
 | `bigwig/<lib>.bw` | RPGC-normalized coverage, 10 bp bins |
 | `qc/deeptools/tss_enrichment_profile.png` / `.tab` | TSS ±2 kb profile (from `tss_matrix.gz`) |
 | `qc/deeptools/fragment_size_distribution.png`, `fragment_size_table.tsv`, `fragment_size_raw.tsv` | bamPEFragmentSize |
@@ -36,7 +41,7 @@ under `logs/`, mirroring this layout.
 | `qc/deeptools/correlation_spearman.png` / `.tsv` | Spearman correlation heatmap and matrix |
 | `qc/deeptools/pca_plot.png`, `pca_data.tsv` | PCA of the bin counts |
 | `qc/deeptools/fingerprint.png`, `fingerprint_metrics.tsv`, `fingerprint_counts.tsv` | plotFingerprint |
-| `qc/multiqc/multiqc_report.html` | MultiQC: cutadapt, Bowtie 2, samtools, deepTools, MACS2, plus pipeline tables (alignment QC, peak summaries, IDR) |
+| `qc/multiqc/multiqc_report.html` | MultiQC: FastQC, cutadapt, Bowtie 2, samtools, deepTools, MACS2, plus pipeline tables (QC summary, alignment QC, peak summaries, IDR) |
 
 ## Peaks (`results/peaks/`)
 

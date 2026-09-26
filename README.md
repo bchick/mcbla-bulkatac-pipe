@@ -165,7 +165,8 @@ See [`docs/outputs.md`](docs/outputs.md). The main files are:
 | File | What it is |
 |---|---|
 | `results/bam/<lib>.final.bam` | filtered, deduplicated BAM (or a link to the nf-core BAM) |
-| `results/qc/alignment_qc_report.tsv` | reads, alignment %, chrM %, blacklist, duplicates, fragment size |
+| `results/qc/qc_summary.tsv` | per-library PASS / WARN / FAIL against ENCODE ATAC thresholds (fragments, alignment, NRF/PBC, FRiP, TSS enrichment) |
+| `results/qc/alignment_qc_report.tsv` | reads, alignment %, chrM %, blacklist, duplicates, fragment size, library complexity |
 | `results/qc/multiqc/multiqc_report.html` | MultiQC report |
 | `results/peaks/merged_stringent/<cond>_peaks.narrowPeak` | production peaks per condition |
 | `results/peaks/idr/idr_summary.tsv` | IDR peak counts and reproducibility per condition |
@@ -208,6 +209,7 @@ If you use this workflow, please cite it (see `CITATION.cff`) and the tools
 it runs:
 
 * Snakemake: Mölder et al. 2021, *F1000Research* 10:33
+* FastQC: Andrews 2010, Babraham Bioinformatics
 * cutadapt: Martin 2011, *EMBnet.journal* 17:10
 * Bowtie 2: Langmead & Salzberg 2012, *Nat Methods* 9:357
 * SAMtools: Danecek et al. 2021, *GigaScience* 10:giab008
