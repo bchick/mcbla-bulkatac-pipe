@@ -46,4 +46,6 @@ fmt-check = "snakefmt --no-format-shell --check workflow/"
 # Real run of the test dataset through align -> peaks -> IDR
 test = "snakemake -s workflow/Snakefile --directory .test --sdm conda --cores 8 test_core"
 # Whole workflow on the test dataset (needs the R and TOBIAS envs)
-test-all = "snakemake -s workflow/Snakefile --directory .test --sdm conda --cores 8"
+test-all = "snakemake -s workflow/Snakefile --directory .test --sdm conda --cores 8 && python .test/scripts/check_results.py"
+# Regression checks on the test-all outputs (run by test-all)
+check-test = "python .test/scripts/check_results.py"

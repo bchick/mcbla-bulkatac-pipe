@@ -14,7 +14,13 @@ read_contrasts <- function(path) {
 }
 
 # Add explicit two-group contrasts (group1 vs group2 by Condition), in the
-# order of contrasts.tsv, exactly as 08 NB01 did with dba$masks.
+# order of contrasts.tsv, under a ~Condition design.
+#
+# The design matters: contrasts given as group masks (as 08 NB01 did) put
+# DiffBind 3.x in its legacy per-contrast mode, where the DESeq2 test sets its
+# own size factors (RLE on the contrast's peak counts, or full library size)
+# and ignores dba.normalize(). Only the reported Conc/Fold used the stored
+# normalization, so every normalization gave identical p-values and FDRs.
 add_contrasts <- function(dba_obj, ct) {
   dba_obj$contrasts <- NULL
   for (i in seq_len(nrow(ct))) {
@@ -24,10 +30,35 @@ add_contrasts <- function(dba_obj, ct) {
       stop(sprintf("Contrast %s: no samples for %s or %s",
                    ct$label[i], ct$group1[i], ct$group2[i]))
     }
-    dba_obj <- DiffBind::dba.contrast(dba_obj, group1 = g1, group2 = g2,
-                                      name1 = ct$group1[i], name2 = ct$group2[i])
+    args <- list(dba_obj, contrast = c("Condition", ct$group1[i], ct$group2[i]))
+    if (i == 1) args$design <- "~Condition"
+    dba_obj <- do.call(DiffBind::dba.contrast, args)
   }
   dba_obj
+}
+
+# dba.analyze without DiffBind's own blacklist/greylist step: reads and peaks
+# are already filtered against reference.blacklist (or deliberately not, when
+# it is empty), and ATAC has no input controls for a greylist.
+analyze <- function(dba_obj) {
+  DiffBind::dba.analyze(dba_obj, bBlacklist = FALSE, bGreylist = FALSE)
+}
+
+# Stop if the DESeq2 fit did not use the size factors dba.normalize() stored.
+# Guards against DiffBind silently falling back to its legacy per-contrast
+# normalization (see add_contrasts).
+check_size_factors <- function(dba_obj) {
+  stored <- dba_obj$norm$DESeq2$norm.facs
+  used <- DESeq2::sizeFactors(dba_obj$DESeq2$DEdata)
+  if (is.null(used) || length(used) != length(stored) ||
+      !isTRUE(all.equal(unname(stored), unname(used), tolerance = 1e-6))) {
+    stop("DESeq2 size factors differ from dba.normalize():\n  stored: ",
+         paste(signif(stored, 4), collapse = " "), "\n  used:   ",
+         paste(signif(used, 4), collapse = " "))
+  }
+  cat("DESeq2 size factors match dba.normalize():",
+      paste(signif(used, 4), collapse = " "), "\n")
+  invisible(used)
 }
 
 # Full (th = 1) report for contrast i as a data.frame with stable columns.

@@ -31,7 +31,8 @@ write_tsv(sf_tbl, snakemake@output[["sizefactors"]])
 print(sf_tbl)
 
 dba_csaw <- add_contrasts(dba_csaw, ct)
-dba_csaw <- dba.analyze(dba_csaw)
+dba_csaw <- analyze(dba_csaw)
+check_size_factors(dba_csaw)
 
 summaries <- list()
 for (i in seq_len(nrow(ct))) {

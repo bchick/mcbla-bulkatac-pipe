@@ -104,7 +104,7 @@ MACS2 at these settings therefore stays the default.
 | Default | Value | Rationale |
 |---|---|---|
 | Peak set | per-replicate relaxed peaks, `minOverlap = 2` | The AS28 analysis. DiffBind builds its own consensus of peaks present in at least 2 libraries and re-centres them on summits (DiffBind default). Set with `diff.peaks: individual`; `idr_consensus`, `stringent_union` or a BED path count over a fixed set instead. |
-| Normalization | DiffBind default (library size, DESeq2) | Supported by the normalization benchmark below. |
+| Normalization | DiffBind default (library size, DESeq2) | The DiffBind 3 default. The AS28 benchmark below that supported it has to be repeated (see the warning there). |
 | Significance | FDR < 0.05 | Tables also carry `Gained_lfc` / `Lost_lfc` counts at \|log2FC\| ≥ 1. |
 | Contrasts | explicit group1 vs group2 by condition | Contrasts are defined within one experiment, so they are not confounded by batch. |
 
@@ -122,7 +122,19 @@ contrast whose gained-peak count moves by more than 20% under an alternative
 normalization is "load-bearing" on normalization and must be reported with
 both. That rule is `normcheck.sensitivity_threshold: 0.20`.
 
-**Evidence for the ATAC default.** For AS28 ATAC, the same 10 contrasts were
+> **Warning: the csaw column below is not valid.** The AS28 analysis (and
+> this pipeline before the fix) gave DiffBind its contrasts as group masks.
+> DiffBind 3.x then runs a legacy per-contrast DESeq2 analysis that sets its
+> own size factors and ignores `dba.normalize()`, so the depth and csaw tests
+> were the same test, and only the reported fold changes differed. That is
+> why the significant sets were identical. The pipeline now uses a
+> `~Condition` design, checks that DESeq2 used the stored size factors, and
+> `pixi run test-all` fails if csaw p-values match depth. The depth counts
+> were also computed under the legacy factors. Re-run AS28 before citing
+> either column or the conclusion drawn from them. The quantile + limma
+> column does not go through DiffBind's test and is unaffected.
+
+**Evidence for the ATAC default (to be re-run).** For AS28 ATAC, the same 10 contrasts were
 re-run under csaw background bins (the ATAC equivalent of greenlist: 15 kb
 bins, DESeq2 native normalization of the bin counts) and under quantile
 normalization + limma:
