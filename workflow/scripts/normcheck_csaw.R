@@ -30,7 +30,7 @@ sf_tbl <- data.frame(
 write_tsv(sf_tbl, snakemake@output[["sizefactors"]])
 print(sf_tbl)
 
-dba_csaw <- add_contrasts(dba_csaw, ct)
+dba_csaw <- add_contrasts(dba_csaw, ct, snakemake@params[["batch"]])
 dba_csaw <- analyze(dba_csaw)
 check_size_factors(dba_csaw)
 

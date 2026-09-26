@@ -72,6 +72,13 @@ reference:
 # AS28 excludes the 15 min libraries (a technical batch), see salk_example.yaml.
 exclude_conditions: []
 
+# Batch covariate. true: model the samplesheet `batch` column (e.g. library
+# prep or sequencing batch) in diff and normcheck (~batch + condition) and in
+# the time course (LRT ~batch + time vs ~batch; batch removed from the VST
+# before clustering). The run stops before any job if batch is incomplete or
+# confounded with condition/time. chromVAR deviations are not batch-corrected.
+batch: false
+
 # -----------------------------------------------------------------------------
 # Processing modules (true/false)
 # -----------------------------------------------------------------------------

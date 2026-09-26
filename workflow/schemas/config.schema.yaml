@@ -23,6 +23,10 @@ properties:
       macs2_gsize: {type: [string, number]}
       mito_chrom: {type: string, default: chrM}
     required: [fasta, effective_genome_size, macs2_gsize]
+  batch:
+    type: boolean
+    default: false
+    description: model the samplesheet `batch` column as a covariate (diff, normcheck, timecourse)
   exclude_conditions:
     type: array
     items: {type: string}

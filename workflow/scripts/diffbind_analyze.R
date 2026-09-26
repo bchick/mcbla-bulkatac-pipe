@@ -25,9 +25,12 @@ dba.plotHeatmap(dba_obj, main = "ATAC-seq sample correlation")
 dev.off()
 pdf(snakemake@output[["pca"]], width = 9, height = 6)
 dba.plotPCA(dba_obj, label = DBA_CONDITION, attributes = DBA_CONDITION)
+if (isTRUE(snakemake@params[["batch"]])) {
+  dba.plotPCA(dba_obj, label = DBA_CONDITION, attributes = DBA_FACTOR)
+}
 dev.off()
 
-dba_obj <- add_contrasts(dba_obj, ct)
+dba_obj <- add_contrasts(dba_obj, ct, snakemake@params[["batch"]])
 dba_obj <- analyze(dba_obj)
 check_size_factors(dba_obj)
 print(dba.show(dba_obj, bContrasts = TRUE))

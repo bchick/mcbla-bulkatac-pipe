@@ -35,6 +35,8 @@ if RUN_TIMECOURSE:
             treatments=[LIBRARIES.loc[l, "treatment"] for l in STAT_LIBS],
             times=[LIBRARIES.loc[l, "time"] for l in STAT_LIBS],
             conditions=[LIBRARIES.loc[l, "condition"] for l in STAT_LIBS],
+            batches=[LIBRARIES.loc[l, "batch"] or "none" for l in STAT_LIBS],
+            batch=USE_BATCH,
             baseline=TC.get("baseline_treatments") or [],
             min_mean_counts=TC["min_mean_counts"],
             lrt_padj=TC["lrt_padj"],

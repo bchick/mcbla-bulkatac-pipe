@@ -80,6 +80,8 @@ rule diffbind_samplesheet:
             for l in STAT_LIBS
         ],
         replicates=[LIBRARIES.loc[l, "replicate"] for l in STAT_LIBS],
+        # DiffBind "Factor" carries the batch when config `batch` is true
+        factors=[LIBRARIES.loc[l, "batch"] if USE_BATCH else "ATAC" for l in STAT_LIBS],
         tissue=DIFF.get("tissue", "NA"),
     script:
         "../scripts/diffbind_samplesheet.py"

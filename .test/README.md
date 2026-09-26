@@ -25,6 +25,10 @@ Design (`config/samples.tsv`):
 | stim_60m | 3 (replicate 3 in two runs) | all-pairs IDR selection, FASTQ merging |
 | stim_120m | 1 | single-replicate IDR fallback |
 
+Replicate 2 libraries are in batch `b2`, the rest in `b1`, and the config sets
+`batch: true`, so diff, normcheck and the time course run with the batch
+covariate.
+
 This directory is the Snakemake working directory:
 
 ```bash

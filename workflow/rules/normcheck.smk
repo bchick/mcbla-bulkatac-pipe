@@ -35,6 +35,7 @@ if RUN_NORMCHECK:
             runtime=720,
         params:
             helpers=workflow.source_path("../scripts/common.R"),
+            batch=USE_BATCH,
             fdr=DIFF["fdr"],
             lfc=DIFF["lfc"],
             tabdir=lambda wildcards, output: os.path.dirname(output.tables[0]),
@@ -60,6 +61,7 @@ if RUN_NORMCHECK:
             runtime=240,
         params:
             helpers=workflow.source_path("../scripts/common.R"),
+            batch=USE_BATCH,
             fdr=DIFF["fdr"],
             lfc=DIFF["lfc"],
             tabdir=lambda wildcards, output: os.path.dirname(output.tables[0]),

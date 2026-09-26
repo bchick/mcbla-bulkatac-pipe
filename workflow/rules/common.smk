@@ -39,7 +39,7 @@ if "condition" not in samples_raw.columns:
 samples_raw["condition"] = [
     c if c else s for c, s in zip(samples_raw["condition"], samples_raw["sample"])
 ]
-for col in ("fastq_1", "fastq_2", "treatment", "time"):
+for col in ("fastq_1", "fastq_2", "treatment", "time", "batch"):
     if col not in samples_raw.columns:
         samples_raw[col] = ""
 validate(samples_raw, schema="../schemas/samples.schema.yaml")
@@ -64,9 +64,10 @@ _per_lib = samples_raw.groupby("lib", sort=False).agg(
         "condition": lambda x: ";".join(sorted(set(x))),
         "treatment": lambda x: ";".join(sorted(set(x))),
         "time": lambda x: ";".join(sorted(set(x))),
+        "batch": lambda x: ";".join(sorted(set(x))),
     }
 )
-for col in ("condition", "treatment", "time"):
+for col in ("condition", "treatment", "time", "batch"):
     bad = _per_lib[_per_lib[col].str.contains(";")]
     if len(bad):
         raise ValueError(
@@ -443,6 +444,67 @@ def timecourse_series():
     base = set(TC.get("baseline_treatments") or [])
     keep = LIBRARIES.loc[STAT_LIBS]
     return [t for t in dict.fromkeys(keep["treatment"]) if t not in base]
+
+
+# ---------------------------------------------------------------------------
+# Batch covariate (config `batch: true` + samplesheet `batch` column)
+# ---------------------------------------------------------------------------
+# Modelled in diff and normcheck (~batch + condition) and in the time course
+# (LRT ~batch + time vs ~batch; batch removed from the VST before clustering).
+# chromVAR deviations are per sample and are not batch-corrected.
+USE_BATCH = bool(config.get("batch", False))
+
+
+def _check_design(label, libs, factor):
+    """Stop unless ~batch + <factor> over `libs` is full rank with residual df."""
+    import numpy as np
+
+    meta = LIBRARIES.loc[libs]
+    x = pd.get_dummies(meta[[factor, "batch"]], drop_first=True, dtype=float)
+    x.insert(0, "intercept", 1.0)
+    rank = np.linalg.matrix_rank(x.to_numpy())
+    if rank < x.shape[1]:
+        raise ValueError(
+            f"batch: {label}: ~batch + {factor} is not estimable, batch is "
+            f"confounded with {factor}. Libraries per {factor} and batch:\n"
+            + pd.crosstab(meta[factor], meta["batch"]).to_string()
+        )
+    if len(libs) <= rank:
+        raise ValueError(
+            f"batch: {label}: {len(libs)} libraries leave no residual degrees "
+            f"of freedom for ~batch + {factor} ({rank} coefficients)."
+        )
+
+
+if USE_BATCH:
+    _nobatch = [l for l in STAT_LIBS if not LIBRARIES.loc[l, "batch"]]
+    if _nobatch:
+        raise ValueError(
+            "batch: true needs a `batch` value for every library in the "
+            f"statistics; missing for: {', '.join(_nobatch)}"
+        )
+    if LIBRARIES.loc[STAT_LIBS, "batch"].nunique() < 2:
+        raise ValueError(
+            "batch: true, but the libraries in the statistics are all in one batch."
+        )
+    if RUN_DIFF:
+        _check_design("diff", STAT_LIBS, "condition")
+    for _s in timecourse_series():
+        _base = set(TC.get("baseline_treatments") or [])
+        _libs = [
+            l
+            for l in STAT_LIBS
+            if LIBRARIES.loc[l, "treatment"] == _s
+            or LIBRARIES.loc[l, "treatment"] in _base
+        ]
+        # a series inside one batch is fitted without the covariate
+        if LIBRARIES.loc[_libs, "batch"].nunique() > 1:
+            _check_design(f"timecourse series '{_s}'", _libs, "time")
+elif (LIBRARIES["batch"] != "").any():
+    _warn(
+        "the samplesheet has a `batch` column but config `batch` is false; "
+        "batch is not modelled."
+    )
 
 
 # ENCODE ATAC-seq standards; config qc.thresholds overrides per metric.

@@ -1,7 +1,7 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 description: >
   Samplesheet row. nf-core/atacseq columns (sample, fastq_1, fastq_2,
-  replicate) plus condition and the optional time-course columns.
+  replicate) plus condition, the optional time-course columns and an optional batch.
 type: object
 properties:
   sample:
@@ -21,6 +21,12 @@ properties:
   treatment:
     type: string
     description: time-course series (e.g. egf); baseline treatments are shared
+  batch:
+    type: string
+    pattern: "^$|^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    description: >
+      optional batch label (e.g. library prep or sequencing batch); modelled
+      as a covariate only when config `batch: true`
   time:
     type: string
     pattern: "^$|^[0-9]+(\\.[0-9]+)?$"

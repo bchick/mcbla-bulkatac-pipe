@@ -1,7 +1,7 @@
 # Re-run the diff contrasts under quantile normalization + limma
 # (port of 08b NB02).
 #   raw reads per consensus peak -> edgeR::filterByExpr -> log2(count + 0.5)
-#   -> preprocessCore::normalize.quantiles -> lmFit(~0 + condition)
+#   -> preprocessCore::normalize.quantiles -> lmFit(~0 + condition [+ batch])
 #   -> contrasts.fit -> eBayes -> topTable
 # Deviation from the notebook: counts are retrieved explicitly as raw reads
 # (DBA_SCORE_READS). Quantile normalization removes per-sample scale, so this
@@ -56,6 +56,12 @@ names(safe) <- unique(cond)
 f <- factor(safe[cond], levels = safe)
 design <- model.matrix(~ 0 + f)
 colnames(design) <- levels(f)
+if (isTRUE(snakemake@params[["batch"]])) {
+  # batch covariate (sample sheet Factor column), as in the DiffBind design
+  b <- factor(dba_obj$samples$Factor)
+  design <- cbind(design, model.matrix(~ b)[, -1, drop = FALSE])
+  cat("limma design: ~0 + condition + batch (", nlevels(b), "batches )\n")
+}
 fit <- lmFit(qn, design)
 cm <- makeContrasts(contrasts = paste0(safe[ct$group1], "-", safe[ct$group2]),
                     levels = design)

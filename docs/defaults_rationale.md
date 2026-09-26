@@ -126,7 +126,8 @@ MACS2 at these settings therefore stays the default.
 | Peak set | per-replicate relaxed peaks, `minOverlap = 2` | The AS28 analysis. DiffBind builds its own consensus of peaks present in at least 2 libraries and re-centres them on summits (DiffBind default). Set with `diff.peaks: individual`; `idr_consensus`, `stringent_union` or a BED path count over a fixed set instead. |
 | Normalization | DiffBind default (library size, DESeq2) | The DiffBind 3 default. The AS28 benchmark below that supported it has to be repeated (see the warning there). |
 | Significance | FDR < 0.05 | Tables also carry `Gained_lfc` / `Lost_lfc` counts at \|log2FC\| ≥ 1. |
-| Contrasts | explicit group1 vs group2 by condition | Contrasts are defined within one experiment, so they are not confounded by batch. |
+| Contrasts | explicit group1 vs group2 by condition, design `~Condition` | DiffBind design mode, so the test uses the `dba.normalize()` size factors. |
+| Batch | off (`batch: false`); `true` models the samplesheet `batch` column | Design `~Factor + Condition`, with batch in DiffBind's Factor column; the quantile + limma check uses `~0 + condition + batch`. AS28 had no batch term: its one technical batch (15 min) was confounded with a time point and was excluded instead. The run refuses a batch that is incomplete, single-level or confounded with condition. |
 
 ## Normalization check
 
@@ -202,6 +203,7 @@ has not been benchmarked.
 | Dynamic peaks | DESeq2 LRT `~time` vs `~1` per series, padj < 0.01 **and** range of per-time VST means ≥ 0.5 | The LRT alone selects many peaks with tiny effects at 22-library depth. The effect-size floor keeps clustering on peaks that actually move. |
 | Clustering | DEGreport `degPatterns`, `minc = 50`, `cutoff = 0.5`, `set.seed(42)` | Produced the interpretable AS28 HRG solution of five superclusters (decreasing, transient, transient-increasing, sustained-increasing, late-increasing). |
 | Shared baseline | `baseline_treatments` (e.g. `unstim`) included in every series at its time | The unstimulated sample is time 0 for both ligands. |
+| Batch (`batch: true`) | LRT `~batch + time` vs `~batch`; `limma::removeBatchEffect` on the VST (time protected) before the VST-range filter and clustering | The DESeq2-recommended pattern: model batch in the test, remove it only from the transformed values used for clustering. A series that sits in one batch is fitted without the term. chromVAR deviations are per sample and are not batch-corrected. |
 
 ## chromVAR
 

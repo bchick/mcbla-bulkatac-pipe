@@ -1,5 +1,9 @@
 # Time-course clustering for one treatment series
 # (port of 05_atac_temporal_clustering 00_preprocessing + 01_degpatterns).
+# With config `batch: true` (and more than one batch in the series) the LRT is
+# ~batch + time vs ~batch, and batch is removed from the VST
+# (limma::removeBatchEffect, time effect protected) before the effect-size
+# filter and clustering.
 
 source(snakemake@params[["helpers"]])
 start_log()
@@ -14,7 +18,8 @@ series <- p$series
 counts <- read.delim(snakemake@input[["counts"]], row.names = 1, check.names = FALSE)
 meta <- data.frame(sample = unlist(p$libs), treatment = unlist(p$treatments),
                    time = as.numeric(unlist(p$times)),
-                   condition = unlist(p$conditions), stringsAsFactors = FALSE)
+                   condition = unlist(p$conditions), batch = unlist(p$batches),
+                   stringsAsFactors = FALSE)
 rownames(meta) <- meta$sample
 counts <- as.matrix(counts[, meta$sample])
 
@@ -39,13 +44,25 @@ times <- sort(unique(meta_s$time))
 cat("Series", series, ":", nrow(meta_s), "samples; times =", paste(times, collapse = ", "), "\n")
 if (length(times) < 2) stop("Series ", series, " has fewer than two time points")
 meta_s$time_f <- factor(meta_s$time, levels = times)
+meta_s$batch_f <- factor(meta_s$batch)
+use_batch <- isTRUE(p$batch) && nlevels(meta_s$batch_f) > 1
+if (isTRUE(p$batch) && !use_batch) {
+  cat("Series", series, "is in a single batch; fitted without the batch covariate\n")
+}
+full <- if (use_batch) ~ batch_f + time_f else ~ time_f
+reduced <- if (use_batch) ~ batch_f else ~ 1
+cat("LRT:", deparse(full), "vs", deparse(reduced), "\n")
 
 dds <- DESeqDataSetFromMatrix(counts(dds_all)[, meta_s$sample],
-                              colData = meta_s, design = ~ time_f)
-dds <- DESeq(dds, test = "LRT", reduced = ~ 1, parallel = FALSE)
+                              colData = meta_s, design = full)
+dds <- DESeq(dds, test = "LRT", reduced = reduced, parallel = FALSE)
 res <- results(dds)
 
 vst_s <- vst_all[, meta_s$sample, drop = FALSE]
+if (use_batch) {
+  vst_s <- limma::removeBatchEffect(vst_s, batch = meta_s$batch_f,
+                                    design = model.matrix(~ time_f, meta_s))
+}
 tmeans <- sapply(split(seq_len(ncol(vst_s)), meta_s$time_f),
                  function(i) rowMeans(vst_s[, i, drop = FALSE]))
 vrange <- apply(tmeans, 1, function(x) max(x) - min(x))

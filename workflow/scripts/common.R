@@ -14,14 +14,17 @@ read_contrasts <- function(path) {
 }
 
 # Add explicit two-group contrasts (group1 vs group2 by Condition), in the
-# order of contrasts.tsv, under a ~Condition design.
+# order of contrasts.tsv, under a ~Condition design, or ~Factor + Condition
+# when `batch` is TRUE (the sample sheet's Factor column holds the batch).
 #
 # The design matters: contrasts given as group masks (as 08 NB01 did) put
 # DiffBind 3.x in its legacy per-contrast mode, where the DESeq2 test sets its
 # own size factors (RLE on the contrast's peak counts, or full library size)
 # and ignores dba.normalize(). Only the reported Conc/Fold used the stored
 # normalization, so every normalization gave identical p-values and FDRs.
-add_contrasts <- function(dba_obj, ct) {
+add_contrasts <- function(dba_obj, ct, batch = FALSE) {
+  design <- if (isTRUE(batch)) "~Factor + Condition" else "~Condition"
+  cat("DiffBind design:", design, "\n")
   dba_obj$contrasts <- NULL
   for (i in seq_len(nrow(ct))) {
     g1 <- DiffBind::dba.mask(dba_obj, DiffBind::DBA_CONDITION, ct$group1[i])
@@ -31,7 +34,7 @@ add_contrasts <- function(dba_obj, ct) {
                    ct$label[i], ct$group1[i], ct$group2[i]))
     }
     args <- list(dba_obj, contrast = c("Condition", ct$group1[i], ct$group2[i]))
-    if (i == 1) args$design <- "~Condition"
+    if (i == 1) args$design <- design
     dba_obj <- do.call(DiffBind::dba.contrast, args)
   }
   dba_obj

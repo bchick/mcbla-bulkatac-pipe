@@ -56,7 +56,8 @@ pixi run test           # align -> peaks -> IDR on the test data
 ### 1. Describe your samples
 
 `config/samples.tsv` uses nf-core/atacseq's columns plus `condition`, and
-optionally `treatment` and `time` for the time-course module:
+optionally `treatment` and `time` for the time-course module and `batch` for a
+batch covariate:
 
 ```tsv
 sample     fastq_1                  fastq_2                  replicate  condition  treatment  time
@@ -72,6 +73,11 @@ egf_30m    EGF30_r1_R1.fastq.gz     EGF30_r1_R2.fastq.gz     1          egf_30m 
 * `treatment` + `time` define time-course series. Treatments listed in
   `timecourse.baseline_treatments` (for example `unstim`) are a shared time-0
   baseline in every series.
+* `batch` (for example library prep or sequencing date) is modelled only when
+  the config sets `batch: true`. It then enters diff and normcheck as
+  `~batch + condition` and the time course as `~batch + time`. The run stops
+  before any job if a library has no batch or batch is confounded with
+  condition or time.
 
 Contrasts go in `config/contrasts.tsv`:
 

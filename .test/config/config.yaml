@@ -65,6 +65,10 @@ reference:
 # AS28 excludes the 15 min libraries (a technical batch), see salk_example.yaml.
 exclude_conditions: []
 
+# Batch covariate (samplesheet `batch` column); on here so the test run
+# exercises the ~batch + condition and ~batch + time designs.
+batch: true
+
 # -----------------------------------------------------------------------------
 # Processing modules (true/false)
 # -----------------------------------------------------------------------------
