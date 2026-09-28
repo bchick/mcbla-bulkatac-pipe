@@ -15,25 +15,6 @@ behind it written down in [`docs/defaults_rationale.md`](docs/defaults_rationale
   <img alt="mcbla-bulkatac-pipe subway map: FASTQ or nf-core/atacseq BAMs, through alignment, MACS2, IDR and consensus peaks, into DiffBind contrasts, normalization check, time-course clustering, chromVAR and TOBIAS footprinting, with a deepTools/MultiQC QC branch" src="docs/images/subway_map_light.svg">
 </picture>
 
-## Why this pipeline, compared with nf-core/atacseq
-
-nf-core/atacseq is a good pipeline for going from reads to filtered BAMs,
-peaks and QC. This workflow can start from its output (`input_mode: nfcore`)
-and adds the analysis layer that stimulus and time-course designs need.
-
-| | nf-core/atacseq 2.x | mcbla-bulkatac-pipe |
-|---|---|---|
-| Trimming, alignment, filtering, dedup | yes (Trim Galore, BWA/Bowtie 2/Chromap/STAR) | yes (cutadapt Nextera, Bowtie 2), or reuses nf-core BAMs |
-| Peak calling | MACS2 per library / merged replicate | MACS2 in four phases: per-replicate relaxed, merged relaxed (IDR oracle), merged stringent (production) |
-| Reproducibility filtering | none (consensus by `bedtools merge` of peak calls) | IDR per condition (ENCODE threshold 0.05), any number of replicates |
-| Consensus peak set | `bedtools merge` of all peaks | merge of IDR-reproducible peaks, stringent union, or 501 bp summit-centred windows (iterative overlap) |
-| Differential accessibility | DESeq2 used for PCA and clustering only; no contrasts | DiffBind + DESeq2 on user contrasts, per-contrast tables, MA plots |
-| Normalization comparison | no | same contrasts re-run under csaw background bins and quantile + limma; contrasts that move by >20% are flagged as normalization-sensitive |
-| Time-course programs | no | DESeq2 LRT over time + DEGreport degPatterns clustering per treatment series |
-| TF activity | no | chromVAR deviations (JASPAR2020 CORE vertebrates, GC-matched background) |
-| TF footprinting | no | TOBIAS ATACorrect, ScoreBigwig, BINDetect across conditions |
-| Defaults | general-purpose | benchmarked on a 22-library stimulus time course ([rationale](docs/defaults_rationale.md)) |
-
 ## Quickstart
 
 ### 0. Install the launcher
