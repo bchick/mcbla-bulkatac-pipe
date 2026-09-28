@@ -105,6 +105,24 @@ pixi run snakemake --profile profiles/local --cores 32  # one machine
 `config/salk_example.yaml` is a filled-in version for GRCh38 on the lab
 server (`--configfile config/salk_example.yaml`).
 
+**On the Salk lab server**, `pixi run init` does this step for you. It asks
+which genome you are using and which blacklist, then writes
+`<project>/project.yaml` pointing at the shared references in
+`/data/resource/manifest.yaml`, with example `samples.tsv` and `contrasts.tsv`
+beside it:
+
+```bash
+pixi run init                                  # interactive
+pixi run init --dir /data/<user>/<project> --genome hg38 --blacklist encode_v2
+pixi run init --list                           # the genomes and blacklists on offer
+pixi run snakemake -s workflow/Snakefile --directory /data/<user>/<project> \
+    --configfile /data/<user>/<project>/project.yaml -n
+```
+
+A project directory needs only its own `project.yaml`, because the repo's
+`config/config.yaml` supplies every other key. Agents running the pipeline for
+someone should follow [AGENTS.md](AGENTS.md).
+
 ### 2b. From an nf-core/atacseq outdir
 
 Run nf-core/atacseq 2.x as usual with the same samplesheet (the extra columns
@@ -193,7 +211,8 @@ runs across 4 conditions covering 1, 2 and 3 replicates and a replicate split
 over two runs. It exercises the single-replicate IDR fallback, the multi-pair
 IDR selection and FASTQ merging. `pixi run test` runs alignment → peaks →
 IDR, and `pixi run test-all` runs everything, including the R and TOBIAS
-environments. CI (`.github/workflows/ci.yml`) runs lint and dry runs in both
+environments. `pixi run test-init` checks `pixi run init` against a fixture
+manifest. CI (`.github/workflows/ci.yml`) runs lint, the init test and dry runs in both
 input modes. A real run of the test data can be started from the Actions tab
 (`workflow_dispatch`).
 

@@ -5,9 +5,12 @@
 #
 #   pixi run snakemake --configfile config/salk_example.yaml --profile profiles/local -n
 #
-# Paths are the ones used by the mcf7_project scripts
-# (scripts/alignment/1.1_atac_align_cc.sh, scripts/atac/2.0-2.2,
-#  analyses/10_tf_footprinting/scripts/*). They are read-only inputs.
+# References are the shared copies in /data/resource (see
+# /data/resource/manifest.yaml), byte-identical to the mcf7_project copies used
+# by its scripts (scripts/alignment/1.1_atac_align_cc.sh, scripts/atac/2.0-2.2,
+# analyses/10_tf_footprinting/scripts/*). The FASTQs and JASPAR file are
+# project inputs and stay in mcf7_project. For a new project, run
+# `pixi run init` instead of copying this file.
 
 samples: config/samples.tsv
 contrasts: config/contrasts.tsv
@@ -20,10 +23,10 @@ fastq_dir: /data/bchick/wproj/mcf7_project/data/raw/atac/AS28_raw
 
 reference:
   # Illumina iGenomes GRCh38 (NCBI), chr-prefixed; bowtie2 2.5.2 index
-  fasta: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Sequence/WholeGenomeFasta/genome.fa
-  bowtie2_index: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Sequence/Bowtie2Index/genome
-  gtf: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Annotation/Genes.gencode/genes.gtf
-  blacklist: /data/bchick/wproj/mcf7_project/data/reference/GRCh38/Annotation/hg38-blacklist.v2.bed
+  fasta: /data/resource/genomes/igenomes/GRCh38/Sequence/WholeGenomeFasta/genome.fa
+  bowtie2_index: /data/resource/genomes/igenomes/GRCh38/Sequence/Bowtie2Index/genome
+  gtf: /data/resource/genomes/igenomes/GRCh38/Annotation/Genes.gencode/genes.gtf
+  blacklist: /data/resource/blacklists/hg38-blacklist.v2.bed
   effective_genome_size: 2913022398
   macs2_gsize: hs
   mito_chrom: chrM
@@ -57,7 +60,9 @@ threads:
   tobias_bindetect: 32
 
 # -----------------------------------------------------------------------------
-# AS08 (PC12, rn6) would instead use:
+# AS08 (PC12, rn6) would instead use the UCSC rn6 it was run on (all
+# _random/chrUn scaffolds), which is NOT the iGenomes rn6 in /data/resource
+# (main chromosomes only, with a GTF). New rat projects: `pixi run init --genome rn6`.
 #   reference:
 #     fasta: /data/bchick/wproj/mcf7_project/data/reference/rn6/Sequence/WholeGenomeFasta/genome.fa
 #     bowtie2_index: /data/bchick/wproj/mcf7_project/data/reference/rn6/Sequence/Bowtie2Index/genome

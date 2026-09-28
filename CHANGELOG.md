@@ -36,6 +36,14 @@ versions.
 
 ### Added
 
+- **`pixi run init`** writes a project config from the lab resource manifest
+  (`/data/resource/manifest.yaml`). It asks for the genome and blacklist
+  (interactively, or as flags for agents) and checks that every file exists.
+  `pixi run init --list` shows the choices, and `pixi run test-init` tests
+  it against a fixture manifest. `AGENTS.md` / `CLAUDE.md` tell agents to ask
+  the user these questions before running.
+- A project directory given with `--directory` no longer needs its own
+  `config/config.yaml`; the repo's supplies the defaults, as in mcbla-cutrun-pipe.
 - **Per-library QC summary with ENCODE thresholds**
   (`results/qc/qc_summary.tsv`, also in MultiQC). Fragments, alignment rate,
   NRF, PBC1, PBC2, FRiP and TSS enrichment are each flagged PASS / WARN / FAIL

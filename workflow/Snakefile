@@ -5,12 +5,20 @@
 # Author: Brent Chick (McBla lab, Salk Institute)
 # License: MIT
 
+import os
+
 from snakemake.utils import min_version
 
 min_version("8.20")
 
+# Defaults: <workdir>/config/config.yaml, else the repository's own, so a
+# project directory only needs a --configfile with the keys it changes.
+DEFAULT_CONFIG = "config/config.yaml"
+if not os.path.exists(DEFAULT_CONFIG):
+    DEFAULT_CONFIG = os.path.join(workflow.basedir, "..", "config", "config.yaml")
 
-configfile: "config/config.yaml"
+
+configfile: DEFAULT_CONFIG
 
 
 include: "rules/common.smk"
