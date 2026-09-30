@@ -12,6 +12,14 @@ verdicts, and, slightly, every final BAM and the peaks and counts built from
 it. Reprocess and re-run the analyses rather than mixing outputs from the two
 versions.
 
+### Added
+
+- **Head-to-head test against nf-core/atacseq** (`pixi run test-nfcore`).
+  Runs nf-core/atacseq 2.1.2 on the synthetic `.test` dataset and scores both
+  pipelines against the simulated truth. It fails if our consensus peaks,
+  duplicate rate or chrM fraction are meaningfully worse than nf-core's. Local
+  and opt-in; the CI job runs only on a manual dispatch with `run_nfcore`.
+
 ### Fixed
 
 - **Differential accessibility now uses the normalization it reports.**
